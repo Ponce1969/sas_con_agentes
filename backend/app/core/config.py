@@ -52,11 +52,11 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
 
     # --- CORS ---
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:8501",
-        "http://localhost:3000",
-        "http://frontend:8501"
-    ]
+    @property
+    def ALLOWED_ORIGINS(self) -> List[str]:
+        """Parse ALLOWED_ORIGINS from .env (comma-separated)"""
+        origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:8501,http://localhost:8502,http://localhost:3000")
+        return [origin.strip() for origin in origins_str.split(",")]
 
     # --- Rate Limiting ---
     RATE_LIMIT_PER_MINUTE: int = 60
@@ -72,6 +72,7 @@ class Settings(BaseSettings):
         env_file = str(BASE_DIR / ".env")
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"  # Ignorar campos extra del .env
 
 # Instancia global de configuración
 settings = Settings()

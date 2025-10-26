@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from pydantic import BaseModel
-from core.config import Settings, get_settings
-from application.embeddings_service import EmbeddingsService
+from app.core.config import Settings, get_settings
+from app.application.embeddings_service import EmbeddingsService
 
 router = APIRouter(prefix="/embeddings", tags=["Embeddings"])
 
