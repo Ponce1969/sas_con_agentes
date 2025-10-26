@@ -31,6 +31,7 @@ app.add_middleware(
 
 # Incluir routers
 app.include_router(health_router.router)
+app.include_router(analysis_router.router)
 app.include_router(embeddings_router.router)
 
 # Evento de inicio

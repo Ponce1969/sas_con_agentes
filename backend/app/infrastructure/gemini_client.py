@@ -65,10 +65,74 @@ class GeminiClient:
                 embeddings[texts[i]] = res
         return embeddings
 
+    async def analyze_code(self, code: str, model: str = "gemini-1.5-flash") -> str:
+        """
+        Analiza código Python y retorna sugerencias de mejora.
+        
+        Args:
+            code: Código Python a analizar
+            model: Modelo de Gemini a usar
+            
+        Returns:
+            Análisis en formato markdown
+        """
+        prompt = f"""Eres un experto en Python con 10 años de experiencia. Analiza este código y proporciona:
+
+1. **🐛 Bugs Potenciales**: Errores que podrían causar problemas en producción
+2. **👃 Code Smells**: Malas prácticas o código que "huele mal"
+3. **⚡ Mejoras de Rendimiento**: Optimizaciones posibles
+4. **📊 Score de Calidad**: Calificación de 0-100 con justificación
+
+Código a analizar:
+```python
+{code}
+```
+
+Formato de respuesta en Markdown:
+## 🐛 Bugs Potenciales
+- [lista de bugs o "No se detectaron bugs"]
+
+## 👃 Code Smells
+- [lista de code smells o "Código limpio"]
+
+## ⚡ Mejoras de Rendimiento
+- [lista de mejoras o "Rendimiento óptimo"]
+
+## 📊 Score de Calidad: [0-100]
+[justificación del score en 2-3 líneas]
+
+Sé específico, constructivo y profesional."""
+
+        url = f"{self.base_url}/generate"
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "temperature": 0.3,  # Más determinístico
+            "max_tokens": 1000
+        }
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            try:
+                resp = await client.post(url, headers=self.headers, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+                analysis = data.get("text", data.get("response", ""))
+                if not analysis:
+                    logger.warning(f"No se recibió análisis: {data}")
+                    return "⚠️ No se pudo generar el análisis"
+                return analysis
+            except httpx.HTTPStatusError as e:
+                logger.error(f"HTTP error al analizar código: {e.response.text}")
+                return f"❌ Error HTTP: {e.response.status_code}"
+            except Exception as e:
+                logger.error(f"Error inesperado al analizar código: {e}")
+                return f"❌ Error: {str(e)}"
+
 # ----------------- USO EJEMPLO -----------------
 # async def main():
 #     client = GeminiClient()
-#     emb = await client.create_embedding("Hola mundo")
-#     print(emb)
+#     code = "def suma(a, b): return a + b"
+#     analysis = await client.analyze_code(code)
+#     print(analysis)
 # asyncio.run(main())
 
