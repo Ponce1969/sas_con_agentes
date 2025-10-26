@@ -130,6 +130,11 @@ if 'codigo_ejemplo' in st.session_state:
     codigo_input = st.session_state['codigo_ejemplo']
     del st.session_state['codigo_ejemplo']
 
+# Cargar código mejorado si se aplicó
+if 'codigo_aplicado' in st.session_state:
+    codigo_input = st.session_state['codigo_aplicado']
+    del st.session_state['codigo_aplicado']
+
 # Análisis
 if analizar_button:
     if not codigo_input or not codigo_input.strip():
@@ -156,24 +161,55 @@ if analizar_button:
                         st.caption(f"🕐 {data.get('timestamp', 'N/A')}")
                         
                         # Análisis en markdown
-                        st.markdown(data.get("analisis", "No se recibió análisis"))
+                        analisis_text = data.get("analisis", "No se recibió análisis")
+                        st.markdown(analisis_text)
+                        
+                        # Extraer código mejorado del análisis
+                        codigo_mejorado = None
+                        if "## ✨ Código Mejorado" in analisis_text:
+                            # Extraer el código entre los bloques ```python
+                            import re
+                            match = re.search(r'## ✨ Código Mejorado\s*```python\s*(.*?)\s*```', analisis_text, re.DOTALL)
+                            if match:
+                                codigo_mejorado = match.group(1).strip()
+                        
+                        # Botones de acción
+                        col_btn1, col_btn2, col_btn3 = st.columns(3)
+                        
+                        with col_btn1:
+                            st.download_button(
+                                label="📥 Descargar Análisis",
+                                data=analisis_text,
+                                file_name=f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
+                                mime="text/markdown",
+                                use_container_width=True
+                            )
+                        
+                        with col_btn2:
+                            if codigo_mejorado:
+                                st.download_button(
+                                    label="💾 Descargar Código Mejorado",
+                                    data=codigo_mejorado,
+                                    file_name=f"improved_code_{datetime.now().strftime('%Y%m%d_%H%M%S')}.py",
+                                    mime="text/x-python",
+                                    use_container_width=True
+                                )
+                        
+                        with col_btn3:
+                            if codigo_mejorado:
+                                if st.button("✨ Aplicar Sugerencias", type="primary", use_container_width=True):
+                                    st.session_state['codigo_aplicado'] = codigo_mejorado
+                                    st.success("✅ ¡Código mejorado aplicado! Revisa el editor.")
+                                    st.rerun()
                         
                         # Información adicional
                         with st.expander("ℹ️ Información del Análisis"):
                             st.json({
                                 "modelo_usado": data.get("modelo_usado", "N/A"),
                                 "usuario_id": data.get("usuario_id", "Anónimo"),
-                                "timestamp": data.get("timestamp", "N/A")
+                                "timestamp": data.get("timestamp", "N/A"),
+                                "codigo_mejorado_disponible": codigo_mejorado is not None
                             })
-                        
-                        # Botón para descargar
-                        st.download_button(
-                            label="📥 Descargar Análisis",
-                            data=data.get("analisis", ""),
-                            file_name=f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
-                            mime="text/markdown",
-                            use_container_width=True
-                        )
                         
                     else:
                         st.error(f"❌ Error {response.status_code}: {response.text}")

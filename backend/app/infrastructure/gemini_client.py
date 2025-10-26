@@ -80,32 +80,50 @@ class GeminiClient:
         Returns:
             Análisis en formato markdown
         """
-        prompt = f"""Eres un experto en Python con 10 años de experiencia. Analiza este código y proporciona:
+        prompt = f"""Eres un experto en Python con 10 años de experiencia. Analiza este código y proporciona un análisis detallado.
 
-1. **🐛 Bugs Potenciales**: Errores que podrían causar problemas en producción
-2. **👃 Code Smells**: Malas prácticas o código que "huele mal"
-3. **⚡ Mejoras de Rendimiento**: Optimizaciones posibles
-4. **📊 Score de Calidad**: Calificación de 0-100 con justificación
-
-Código a analizar:
+**CÓDIGO A ANALIZAR:**
 ```python
 {code}
 ```
 
-Formato de respuesta en Markdown:
+**INSTRUCCIONES:**
+1. Identifica bugs, code smells y mejoras de rendimiento
+2. Proporciona el código CORREGIDO completo (no solo fragmentos)
+3. Explica cada cambio realizado
+4. Asigna un score de calidad (0-100)
+
+**FORMATO DE RESPUESTA (usa exactamente este formato):**
+
 ## 🐛 Bugs Potenciales
-- [lista de bugs o "No se detectaron bugs"]
+- [Lista detallada de bugs encontrados, o "✅ No se detectaron bugs"]
 
 ## 👃 Code Smells
-- [lista de code smells o "Código limpio"]
+- [Lista de malas prácticas encontradas, o "✅ Código limpio"]
 
 ## ⚡ Mejoras de Rendimiento
-- [lista de mejoras o "Rendimiento óptimo"]
+- [Lista de optimizaciones posibles, o "✅ Rendimiento óptimo"]
 
-## 📊 Score de Calidad: [0-100]
-[justificación del score en 2-3 líneas]
+## 📊 Score de Calidad: [0-100]/100
 
-Sé específico, constructivo y profesional."""
+**Justificación:** [Explica el score en 2-3 líneas]
+
+## ✨ Código Mejorado
+
+```python
+# Código corregido con todas las mejoras aplicadas
+[AQUÍ VA EL CÓDIGO COMPLETO MEJORADO]
+```
+
+## 📝 Cambios Realizados
+1. **[Tipo de cambio]**: [Explicación breve]
+2. **[Tipo de cambio]**: [Explicación breve]
+[etc...]
+
+**IMPORTANTE:** 
+- Sé específico y constructivo
+- Si el código está perfecto, di "✅ Código excelente, no requiere cambios"
+- Siempre incluye el código mejorado completo, no fragmentos"""
 
         # URL de la API oficial de Google Gemini
         url = f"{self.base_url}/models/{model}:generateContent?key={self.api_key}"
@@ -118,7 +136,7 @@ Sé específico, constructivo y profesional."""
             }],
             "generationConfig": {
                 "temperature": 0.3,
-                "maxOutputTokens": 2048,
+                "maxOutputTokens": 4096,  # Aumentado para incluir código completo
                 "topP": 0.8,
                 "topK": 10
             }
