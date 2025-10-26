@@ -10,30 +10,26 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Crear directorio de trabajo
 WORKDIR $APP_HOME
 
-# Instalar dependencias del sistema y UV
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
-# Agregar UV al PATH
-ENV PATH="/root/.cargo/bin:$PATH"
+# Instalar UV usando pip (más confiable en Docker)
+RUN pip install --no-cache-dir uv
 
-# Copiar archivos de dependencias
-COPY pyproject.toml uv.lock* ./
+# Copiar código de la aplicación primero (necesario para pyproject.toml)
+COPY . .
+
+# Dar permisos a los scripts ANTES de instalar
+RUN chmod +x scripts/*.sh
 
 # Instalar dependencias con UV (mucho más rápido que pip)
 RUN uv sync --frozen
 
-# Copiar código de la aplicación
-COPY . .
-
 # Exponer puertos (FastAPI: 8000, Streamlit: 8501)
 EXPOSE 8000 8501
 
-# Copiar y dar permisos a los scripts
-RUN chmod +x scripts/*.sh
-
 # Comando por defecto: ejecutar script que levanta ambos servicios
-CMD ["./scripts/start.sh"]
+CMD ["/bin/bash", "./scripts/start.sh"]

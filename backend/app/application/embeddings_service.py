@@ -1,7 +1,8 @@
 # backend/app/application/embeddings_service.py
 
 from typing import List, Dict, Any
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 import os
 import requests
 

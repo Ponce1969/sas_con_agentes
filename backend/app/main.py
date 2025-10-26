@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.logger import setup_logging
-from app.web.routers import embeddings_router, health_router
+from app.web.routers import analysis_router, embeddings_router, health_router
 
 # Inicializar logging
 setup_logging()
