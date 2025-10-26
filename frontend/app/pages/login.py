@@ -4,6 +4,7 @@ Página de Login - Autenticación de usuarios (placeholder para MVP).
 
 import streamlit as st
 import os
+import time
 
 # Configuración
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8001")
@@ -53,7 +54,8 @@ with col2:
                 # TODO: Implementar autenticación real con JWT
                 st.success("✅ Login exitoso! (placeholder)")
                 st.info("🔄 Redirigiendo al dashboard...")
-                # st.switch_page("pages/dashboard.py")
+                time.sleep(1)  # Pequeño delay para que el usuario vea el mensaje
+                st.switch_page("pages/dashboard.py")
     
     st.markdown("---")
     
@@ -76,7 +78,8 @@ with col2:
     
     if st.button("🚀 Continuar sin Login", use_container_width=True, type="secondary"):
         st.info("Redirigiendo a la página principal...")
-        # st.switch_page("main.py")
+        time.sleep(0.5)  # Pequeño delay
+        st.switch_page("main.py")
     
     st.markdown("---")
     
