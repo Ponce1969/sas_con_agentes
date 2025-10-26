@@ -1,0 +1,71 @@
+# Configuración de Ruff - Neural SaaS Platform
+# Basado en Practicas_Python.md
+
+# Configuración general
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "*.egg-info",
+]
+
+[lint]
+# Reglas activadas
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (imports ordenados)
+    "N",   # pep8-naming (snake_case obligatorio)
+    "W",   # pycodestyle warnings
+    "UP",  # pyupgrade (Python 3.12+)
+    "B",   # flake8-bugbear (bugs comunes)
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "RUF", # Ruff-specific rules
+]
+
+# Reglas ignoradas
+ignore = [
+    "E501",  # line too long (manejado por black)
+    "B008",  # do not perform function calls in argument defaults (FastAPI Depends)
+]
+
+# Permitir autofix para estas reglas
+fixable = ["ALL"]
+unfixable = []
+
+# Permitir imports sin usar en __init__.py
+[lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"tests/**/*.py" = ["S101"]  # Permitir asserts en tests
+
+[lint.isort]
+known-first-party = ["app", "backend", "frontend"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+lines-after-imports = 2
+
+[lint.pep8-naming]
+# snake_case obligatorio para variables, funciones y métodos
+classmethod-decorators = ["classmethod", "pydantic.validator"]
+
+[lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path"]
+
+[format]
+# Configuración de formateo (compatible con Black)
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# UV
+.uv/
+
+# Obsoleto - usamos pyproject.toml + uv.lock
+requirements.txt
+*/requirements.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite3
+data/
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
