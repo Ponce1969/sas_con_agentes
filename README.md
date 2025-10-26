@@ -1,6 +1,21 @@
 # 🧠 Neural SaaS Platform
 
-Plataforma SaaS de Agentes de IA para análisis de código Python.
+**Plataforma SaaS de Agentes de IA para análisis de código Python**
+
+---
+
+## 📚 Documentación Completa
+
+Toda la documentación del proyecto está organizada en la carpeta [`../AGENTES.md/`](../AGENTES.md/):
+
+- **[CONFIG.md](../AGENTES.md/CONFIG.md)** - Gestión de configuración y variables de entorno
+- **[DEPENDENCIES.md](../AGENTES.md/DEPENDENCIES.md)** - Gestión de dependencias con UV
+- **[ESTRUCTURA.md](../AGENTES.md/ESTRUCTURA.md)** - Arquitectura hexagonal del proyecto
+- **[CONTRIBUTING.md](../AGENTES.md/CONTRIBUTING.md)** - Guía de contribución y estándares
+- **[GEMINI_UPGRADE.md](../AGENTES.md/GEMINI_UPGRADE.md)** - Migración a Gemini 2.5 Flash
+- **[PROXIMOS_PASOS.md](../AGENTES.md/PROXIMOS_PASOS.md)** - Plan de desarrollo y próximos pasos
+
+---
 
 ## 🚀 Quick Start
 
