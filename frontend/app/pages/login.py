@@ -53,9 +53,9 @@ with col2:
             else:
                 # TODO: Implementar autenticación real con JWT
                 st.success("✅ Login exitoso! (placeholder)")
-                st.info("🔄 Redirigiendo al dashboard...")
+                st.info("🔄 Redirigiendo a la página principal...")
                 time.sleep(1)  # Pequeño delay para que el usuario vea el mensaje
-                st.switch_page("pages/dashboard.py")
+                st.switch_page("main.py")
     
     st.markdown("---")
     
