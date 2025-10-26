@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # --- API Keys ---
     GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-2.5-flash"  # Modelo más moderno y potente
 
     # --- Redis ---
     REDIS_HOST: str = "redis"

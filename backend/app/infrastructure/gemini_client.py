@@ -69,13 +69,13 @@ class GeminiClient:
                 embeddings[texts[i]] = res
         return embeddings
 
-    async def analyze_code(self, code: str, model: str = "gemini-1.5-flash") -> str:
+    async def analyze_code(self, code: str, model: str = "gemini-2.5-flash") -> str:
         """
         Analiza código Python y retorna sugerencias de mejora.
         
         Args:
             code: Código Python a analizar
-            model: Modelo de Gemini a usar (gemini-1.5-flash, gemini-2.0-flash-exp, gemini-2.5-flash)
+            model: Modelo de Gemini a usar (gemini-2.5-flash - el más moderno y potente)
             
         Returns:
             Análisis en formato markdown
