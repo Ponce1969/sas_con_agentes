@@ -14,7 +14,8 @@ st.set_page_config(
 )
 
 # URL del backend (desde variable de entorno o default)
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8001")
+# Dentro del contenedor Docker, ambos servicios están en localhost
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # Título principal
 st.title("🧠 Neural Code Analyzer")
