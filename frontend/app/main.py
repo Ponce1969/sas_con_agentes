@@ -230,6 +230,8 @@ if 'ultimo_analisis' in st.session_state and not analizar_button:
         if codigo_mejorado and aplicar_btn:
             st.session_state['codigo_aplicado'] = codigo_mejorado
             st.session_state['mostrar_mensaje_aplicado'] = True
+            # Mantener el análisis visible después de aplicar
+            # st.rerun() se ejecuta automáticamente al cambiar session_state
             st.rerun()
         
         # Información adicional
