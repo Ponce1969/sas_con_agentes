@@ -58,6 +58,19 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**Versión:** 0.1.0 MVP")
 
+# Preparar valor inicial del editor (ANTES de renderizar)
+valor_inicial = ""
+
+# Cargar ejemplo si existe en session_state
+if 'codigo_ejemplo' in st.session_state:
+    valor_inicial = st.session_state['codigo_ejemplo']
+    del st.session_state['codigo_ejemplo']
+
+# Cargar código mejorado si se aplicó (tiene prioridad)
+if 'codigo_aplicado' in st.session_state:
+    valor_inicial = st.session_state['codigo_aplicado']
+    del st.session_state['codigo_aplicado']
+
 # Layout principal con dos columnas
 col_left, col_right = st.columns([1, 1])
 
@@ -67,6 +80,7 @@ with col_left:
     # Editor de código
     codigo_input = st.text_area(
         "Pega tu código Python aquí:",
+        value=valor_inicial,
         height=400,
         placeholder="""def ejemplo():
     # Tu código aquí
@@ -125,16 +139,6 @@ resultado = calcular_promedio(lista)
 print(resultado)"""
     st.session_state['codigo_ejemplo'] = codigo_ejemplo
     st.rerun()
-
-# Cargar ejemplo si existe en session_state
-if 'codigo_ejemplo' in st.session_state:
-    codigo_input = st.session_state['codigo_ejemplo']
-    del st.session_state['codigo_ejemplo']
-
-# Cargar código mejorado si se aplicó
-if 'codigo_aplicado' in st.session_state:
-    codigo_input = st.session_state['codigo_aplicado']
-    del st.session_state['codigo_aplicado']
 
 # Mostrar mensaje de éxito si se aplicó código
 if 'mostrar_mensaje_aplicado' in st.session_state:
