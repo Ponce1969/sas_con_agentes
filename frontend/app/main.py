@@ -167,12 +167,28 @@ if analizar_button:
                         
                         # Extraer código mejorado del análisis
                         codigo_mejorado = None
-                        if "## ✨ Código Mejorado" in analisis_text:
-                            # Extraer el código entre los bloques ```python
+                        if "✨ Código Mejorado" in analisis_text:
+                            # Extraer el código entre los bloques ```python (con o sin ##)
                             import re
-                            match = re.search(r'## ✨ Código Mejorado\s*```python\s*(.*?)\s*```', analisis_text, re.DOTALL)
+                            # Intentar con ## primero
+                            match = re.search(r'##\s*✨\s*Código Mejorado.*?```python\s*(.*?)\s*```', analisis_text, re.DOTALL | re.IGNORECASE)
+                            if not match:
+                                # Intentar sin ##
+                                match = re.search(r'✨\s*Código Mejorado.*?```python\s*(.*?)\s*```', analisis_text, re.DOTALL | re.IGNORECASE)
+                            if not match:
+                                # Último intento: buscar cualquier bloque de código después de "Código Mejorado"
+                                match = re.search(r'Código Mejorado.*?```(?:python)?\s*(.*?)\s*```', analisis_text, re.DOTALL | re.IGNORECASE)
+                            
                             if match:
                                 codigo_mejorado = match.group(1).strip()
+                                # Limpiar comentarios iniciales si existen
+                                if codigo_mejorado.startswith('#'):
+                                    lines = codigo_mejorado.split('\n')
+                                    # Encontrar la primera línea que no es comentario
+                                    for i, line in enumerate(lines):
+                                        if line.strip() and not line.strip().startswith('#'):
+                                            codigo_mejorado = '\n'.join(lines[i:])
+                                            break
                         
                         # Botones de acción
                         col_btn1, col_btn2, col_btn3 = st.columns(3)
