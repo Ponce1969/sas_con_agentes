@@ -136,6 +136,11 @@ if 'codigo_aplicado' in st.session_state:
     codigo_input = st.session_state['codigo_aplicado']
     del st.session_state['codigo_aplicado']
 
+# Mostrar mensaje de éxito si se aplicó código
+if 'mostrar_mensaje_aplicado' in st.session_state:
+    st.success("✅ ¡Código mejorado aplicado! Revisa el editor arriba.")
+    del st.session_state['mostrar_mensaje_aplicado']
+
 # Mostrar último análisis si existe (después de aplicar sugerencias)
 if 'ultimo_analisis' in st.session_state and not analizar_button:
     with results_container:
@@ -216,7 +221,7 @@ if 'ultimo_analisis' in st.session_state and not analizar_button:
             if codigo_mejorado:
                 if st.button("✨ Aplicar Sugerencias", type="primary", use_container_width=True):
                     st.session_state['codigo_aplicado'] = codigo_mejorado
-                    st.success("✅ ¡Código mejorado aplicado! Revisa el editor.")
+                    st.session_state['mostrar_mensaje_aplicado'] = True
                     st.rerun()
         
         # Información adicional
