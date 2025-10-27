@@ -167,28 +167,42 @@ if analizar_button:
                         
                         # Extraer código mejorado del análisis
                         codigo_mejorado = None
-                        if "✨ Código Mejorado" in analisis_text:
-                            # Extraer el código entre los bloques ```python (con o sin ##)
-                            import re
-                            # Intentar con ## primero
-                            match = re.search(r'##\s*✨\s*Código Mejorado.*?```python\s*(.*?)\s*```', analisis_text, re.DOTALL | re.IGNORECASE)
-                            if not match:
-                                # Intentar sin ##
-                                match = re.search(r'✨\s*Código Mejorado.*?```python\s*(.*?)\s*```', analisis_text, re.DOTALL | re.IGNORECASE)
-                            if not match:
-                                # Último intento: buscar cualquier bloque de código después de "Código Mejorado"
-                                match = re.search(r'Código Mejorado.*?```(?:python)?\s*(.*?)\s*```', analisis_text, re.DOTALL | re.IGNORECASE)
+                        import re
+                        
+                        # Debug: mostrar si se detectó la sección
+                        if "Código Mejorado" in analisis_text or "Codigo Mejorado" in analisis_text:
+                            # Intentar múltiples patrones
+                            patterns = [
+                                r'##\s*✨\s*Código Mejorado.*?```python\s*(.*?)\s*```',
+                                r'✨\s*Código Mejorado.*?```python\s*(.*?)\s*```',
+                                r'Código Mejorado.*?```python\s*(.*?)\s*```',
+                                r'##\s*✨\s*Codigo Mejorado.*?```python\s*(.*?)\s*```',
+                                r'✨\s*Codigo Mejorado.*?```python\s*(.*?)\s*```',
+                                r'Codigo Mejorado.*?```python\s*(.*?)\s*```',
+                                # Sin especificador python
+                                r'Código Mejorado.*?```\s*(def .*?)\s*```',
+                                r'Codigo Mejorado.*?```\s*(def .*?)\s*```',
+                            ]
                             
-                            if match:
-                                codigo_mejorado = match.group(1).strip()
-                                # Limpiar comentarios iniciales si existen
-                                if codigo_mejorado.startswith('#'):
-                                    lines = codigo_mejorado.split('\n')
-                                    # Encontrar la primera línea que no es comentario
-                                    for i, line in enumerate(lines):
-                                        if line.strip() and not line.strip().startswith('#'):
-                                            codigo_mejorado = '\n'.join(lines[i:])
-                                            break
+                            for pattern in patterns:
+                                match = re.search(pattern, analisis_text, re.DOTALL | re.IGNORECASE)
+                                if match:
+                                    codigo_mejorado = match.group(1).strip()
+                                    # Limpiar comentarios iniciales si existen
+                                    if codigo_mejorado.startswith('#'):
+                                        lines = codigo_mejorado.split('\n')
+                                        # Encontrar la primera línea que no es comentario
+                                        for i, line in enumerate(lines):
+                                            if line.strip() and not line.strip().startswith('#'):
+                                                codigo_mejorado = '\n'.join(lines[i:])
+                                                break
+                                    break
+                        
+                        # Debug temporal
+                        if codigo_mejorado:
+                            st.success(f"✅ Código mejorado detectado ({len(codigo_mejorado)} caracteres)")
+                        else:
+                            st.warning("⚠️ No se pudo extraer el código mejorado. Verifica el formato de la respuesta.")
                         
                         # Botones de acción
                         col_btn1, col_btn2, col_btn3 = st.columns(3)
