@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 class GeminiClient:
     """
     Cliente para la API de Google Gemini.
-    Soporta: gemini-1.5-flash, gemini-2.0-flash-exp, gemini-2.5-flash (futuro)
+    Modelo recomendado: gemini-2.5-flash (el más moderno y potente)
+    Compatible con API v1beta.
     Maneja llamadas async y API key desde .env.
     """
 
