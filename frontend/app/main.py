@@ -219,10 +219,14 @@ if 'ultimo_analisis' in st.session_state and not analizar_button:
         
         with col_btn3:
             if codigo_mejorado:
-                if st.button("✨ Aplicar Sugerencias", type="primary", use_container_width=True):
-                    st.session_state['codigo_aplicado'] = codigo_mejorado
-                    st.session_state['mostrar_mensaje_aplicado'] = True
-                    st.rerun()
+                # Usar key única para evitar conflictos
+                aplicar_btn = st.button("✨ Aplicar Sugerencias", type="primary", use_container_width=True, key="aplicar_sugerencias_btn")
+        
+        # Manejar click fuera del contenedor para evitar conflictos de DOM
+        if codigo_mejorado and aplicar_btn:
+            st.session_state['codigo_aplicado'] = codigo_mejorado
+            st.session_state['mostrar_mensaje_aplicado'] = True
+            st.rerun()
         
         # Información adicional
         with st.expander("ℹ️ Información del Análisis"):
@@ -328,10 +332,14 @@ if analizar_button:
                         
                         with col_btn3:
                             if codigo_mejorado:
-                                if st.button("✨ Aplicar Sugerencias", type="primary", use_container_width=True):
-                                    st.session_state['codigo_aplicado'] = codigo_mejorado
-                                    st.success("✅ ¡Código mejorado aplicado! Revisa el editor.")
-                                    st.rerun()
+                                # Usar key única diferente para este botón
+                                aplicar_btn_nuevo = st.button("✨ Aplicar Sugerencias", type="primary", use_container_width=True, key="aplicar_sugerencias_nuevo_btn")
+                        
+                        # Manejar click fuera del contenedor para evitar conflictos de DOM
+                        if codigo_mejorado and aplicar_btn_nuevo:
+                            st.session_state['codigo_aplicado'] = codigo_mejorado
+                            st.session_state['mostrar_mensaje_aplicado'] = True
+                            st.rerun()
                         
                         # Información adicional
                         with st.expander("ℹ️ Información del Análisis"):
