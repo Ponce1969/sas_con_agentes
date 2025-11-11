@@ -140,9 +140,9 @@ print(resultado)"""
     st.session_state['codigo_ejemplo'] = codigo_ejemplo
     st.rerun()
 
-# Mostrar mensaje de éxito si se aplicó código
+# Mostrar mensaje de éxito si se aplicó código (al inicio para que sea visible)
 if 'mostrar_mensaje_aplicado' in st.session_state:
-    st.success("✅ ¡Código mejorado aplicado! Revisa el editor arriba.")
+    st.success("✅ ¡Código mejorado aplicado exitosamente! El editor se ha actualizado con las sugerencias.")
     del st.session_state['mostrar_mensaje_aplicado']
 
 # Mostrar último análisis si existe (después de aplicar sugerencias)
@@ -158,15 +158,13 @@ if 'ultimo_analisis' in st.session_state and not analizar_button:
         
         # Análisis en markdown
         analisis_text = data.get("analisis", "No se recibió análisis")
-        st.markdown(analisis_text)
         
         # Extraer código mejorado del análisis
         codigo_mejorado = None
         import re
         
-        # Debug: mostrar si se detectó la sección
+        # Intentar múltiples patrones para extraer el código
         if "Código Mejorado" in analisis_text or "Codigo Mejorado" in analisis_text:
-            # Intentar múltiples patrones
             patterns = [
                 r'##\s*✨\s*Código Mejorado.*?```python\s*(.*?)\s*```',
                 r'✨\s*Código Mejorado.*?```python\s*(.*?)\s*```',
@@ -193,9 +191,34 @@ if 'ultimo_analisis' in st.session_state and not analizar_button:
                                 break
                     break
         
-        # Debug temporal
+        # Eliminar la sección de código mejorado del análisis para evitar duplicación
         if codigo_mejorado:
-            st.success(f"✅ Código mejorado detectado ({len(codigo_mejorado)} caracteres)")
+            # Eliminar completamente la sección de código mejorado del texto de análisis
+            # Patrón principal: desde "✨" seguido de cualquier variación de "Código Mejorado" hasta "📝 Cambios"
+            analisis_sin_codigo = re.sub(
+                r'#+?\s*✨\s*[CcóÓ].*?(?=📝)',
+                '',
+                analisis_text,
+                flags=re.MULTILINE | re.DOTALL
+            )
+            
+            # Limpiar cualquier línea que solo contenga emoji ✨ con o sin letra
+            analisis_sin_codigo = re.sub(r'\n?\s*✨\s*[A-Za-z]?\s*\n?', '\n', analisis_sin_codigo)
+            
+            # Limpiar líneas vacías múltiples
+            analisis_sin_codigo = re.sub(r'\n{3,}', '\n\n', analisis_sin_codigo)
+            analisis_sin_codigo = re.sub(r'\s+$', '', analisis_sin_codigo, flags=re.MULTILINE)
+            st.markdown(analisis_sin_codigo.strip())
+        else:
+            st.markdown(analisis_text)
+        
+        # Mostrar código mejorado en bloque copiable
+        if codigo_mejorado:
+            st.markdown("---")
+            st.markdown("### 💻 Versión Optimizada del Código")
+            st.info("💡 **Consejos de uso:**\n- Copia el código usando el icono 📋 (arriba a la derecha)\n- O aplica directamente con el botón '✨ Aplicar Sugerencias' (más abajo)")
+            st.code(codigo_mejorado, language="python", line_numbers=True)
+            st.success(f"✅ Código optimizado listo ({len(codigo_mejorado)} caracteres)")
         else:
             st.warning("⚠️ No se pudo extraer el código mejorado. Verifica el formato de la respuesta.")
         
@@ -265,6 +288,27 @@ if analizar_button:
                         # Guardar en session_state para que persista después de rerun
                         st.session_state['ultimo_analisis'] = data
                         
+                        # Guardar en historial de análisis para estadísticas
+                        if 'historial_analisis' not in st.session_state:
+                            st.session_state['historial_analisis'] = []
+                        
+                        # Extraer score del análisis (si está disponible)
+                        analisis_text = data.get("analisis", "")
+                        score = None
+                        import re
+                        score_match = re.search(r'Score de Calidad:\s*(\d+)/100', analisis_text)
+                        if score_match:
+                            score = int(score_match.group(1))
+                        
+                        # Agregar al historial
+                        st.session_state['historial_analisis'].append({
+                            "timestamp": data.get("timestamp"),
+                            "codigo": codigo_input[:100] + "..." if len(codigo_input) > 100 else codigo_input,
+                            "score": score,
+                            "modelo": data.get("modelo_usado"),
+                            "analisis_completo": analisis_text
+                        })
+                        
                         # Mostrar resultados
                         st.success("✅ Análisis completado!")
                         
@@ -273,15 +317,13 @@ if analizar_button:
                         
                         # Análisis en markdown
                         analisis_text = data.get("analisis", "No se recibió análisis")
-                        st.markdown(analisis_text)
                         
                         # Extraer código mejorado del análisis
                         codigo_mejorado = None
                         import re
                         
-                        # Debug: mostrar si se detectó la sección
+                        # Intentar múltiples patrones para extraer el código
                         if "Código Mejorado" in analisis_text or "Codigo Mejorado" in analisis_text:
-                            # Intentar múltiples patrones
                             patterns = [
                                 r'##\s*✨\s*Código Mejorado.*?```python\s*(.*?)\s*```',
                                 r'✨\s*Código Mejorado.*?```python\s*(.*?)\s*```',
@@ -308,9 +350,34 @@ if analizar_button:
                                                 break
                                     break
                         
-                        # Debug temporal
+                        # Eliminar la sección de código mejorado del análisis para evitar duplicación
                         if codigo_mejorado:
-                            st.success(f"✅ Código mejorado detectado ({len(codigo_mejorado)} caracteres)")
+                            # Eliminar completamente la sección de código mejorado del texto de análisis
+                            # Patrón principal: desde "✨" seguido de cualquier variación de "Código Mejorado" hasta "📝 Cambios"
+                            analisis_sin_codigo = re.sub(
+                                r'#+?\s*✨\s*[CcóÓ].*?(?=📝)',
+                                '',
+                                analisis_text,
+                                flags=re.MULTILINE | re.DOTALL
+                            )
+                            
+                            # Limpiar cualquier línea que solo contenga emoji ✨ con o sin letra
+                            analisis_sin_codigo = re.sub(r'\n?\s*✨\s*[A-Za-z]?\s*\n?', '\n', analisis_sin_codigo)
+                            
+                            # Limpiar líneas vacías múltiples
+                            analisis_sin_codigo = re.sub(r'\n{3,}', '\n\n', analisis_sin_codigo)
+                            analisis_sin_codigo = re.sub(r'\s+$', '', analisis_sin_codigo, flags=re.MULTILINE)
+                            st.markdown(analisis_sin_codigo.strip())
+                        else:
+                            st.markdown(analisis_text)
+                        
+                        # Mostrar código mejorado en bloque copiable
+                        if codigo_mejorado:
+                            st.markdown("---")
+                            st.markdown("### 💻 Versión Optimizada del Código")
+                            st.info("💡 **Consejos de uso:**\n- Copia el código usando el icono 📋 (arriba a la derecha)\n- O aplica directamente con el botón '✨ Aplicar Sugerencias' (más abajo)")
+                            st.code(codigo_mejorado, language="python", line_numbers=True)
+                            st.success(f"✅ Código optimizado listo ({len(codigo_mejorado)} caracteres)")
                         else:
                             st.warning("⚠️ No se pudo extraer el código mejorado. Verifica el formato de la respuesta.")
                         
