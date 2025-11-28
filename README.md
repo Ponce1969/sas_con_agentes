@@ -1,236 +1,110 @@
-# 🧠 Neural SaaS Platform
+# 🧠 Neural Code Analyzer
 
-**Plataforma SaaS de Agentes de IA para análisis de código Python**
+**Plataforma SaaS para análisis de código Python con IA (Gemini 2.5 Flash)**
 
----
-
-## 📚 Documentación Completa
-
-Toda la documentación del proyecto está organizada en la carpeta [`../AGENTES.md/`](../AGENTES.md/):
-
-- **[CONFIG.md](../AGENTES.md/CONFIG.md)** - Gestión de configuración y variables de entorno
-- **[DEPENDENCIES.md](../AGENTES.md/DEPENDENCIES.md)** - Gestión de dependencias con UV
-- **[ESTRUCTURA.md](../AGENTES.md/ESTRUCTURA.md)** - Arquitectura hexagonal del proyecto
-- **[CONTRIBUTING.md](../AGENTES.md/CONTRIBUTING.md)** - Guía de contribución y estándares
-- **[GEMINI_UPGRADE.md](../AGENTES.md/GEMINI_UPGRADE.md)** - Migración a Gemini 2.5 Flash
-- **[PROXIMOS_PASOS.md](../AGENTES.md/PROXIMOS_PASOS.md)** - Plan de desarrollo y próximos pasos
+> **Versión:** 1.0.0-beta | **Estado:** MVP Funcional
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisitos
-- Python 3.12+
-- [UV](https://github.com/astral-sh/uv) instalado
-- Docker y Docker Compose (opcional)
-- API Key de Google Gemini
-
-### Configuración
-
-1. **Clonar el repositorio**
 ```bash
-git clone <tu-repo>
+# 1. Clonar y entrar al proyecto
+git clone https://github.com/Ponce1969/sas_con_agentes.git
 cd project_saas
-```
 
-2. **Instalar UV (si no lo tienes)**
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+# 2. Configurar API Key de Gemini
+cp .env.example .env
+nano .env  # Agregar: GEMINI_API_KEY=tu_key
 
-3. **Configurar variables de entorno**
-```bash
-# Editar .env y agregar tu API key de Gemini
-nano .env
-
-# Cambiar esta línea:
-GEMINI_API_KEY=tu_api_key_real_aqui
-```
-
-4. **Instalar dependencias con UV**
-```bash
-# UV sincroniza automáticamente las dependencias
+# 3. Instalar dependencias
 uv sync
 
-# O instalar manualmente
-uv pip install -e .
+# 4. Levantar servicios
+make dev  # O: docker-compose up --build
 ```
 
-5. **Levantar la aplicación**
+**URLs:**
+- Frontend: http://localhost:8501
+- API Docs: http://localhost:8000/docs
 
-**Opción A: Con Docker (recomendado para producción)**
-```bash
-# Verificar puertos disponibles primero
-./check-ports.sh
-
-# Con Docker Compose (verifica puertos automáticamente)
-make docker-up
-
-# O manualmente
-docker-compose up --build
-```
-
-**⚠️ Nota sobre puertos:** Este proyecto usa puertos alternativos para evitar conflictos:
-- PostgreSQL: `5433` (en lugar de 5432)
-- Redis: `6380` (en lugar de 6379)
-- Backend: `8001` (en lugar de 8000)
-- Frontend: `8502` (en lugar de 8501)
-
-Puedes cambiar estos puertos editando `.env`
-
-**Opción B: Local con UV (recomendado para desarrollo)**
-```bash
-# Opción 1: Usando el script dev.sh (levanta ambos servicios)
-./scripts/dev.sh
-
-# Opción 2: Usando Makefile
-make dev
-
-# Opción 3: Manual (dos terminales)
-# Terminal 1: Backend
-uv run uvicorn backend.app.main:app --reload --port 8000
-
-# Terminal 2: Frontend
-uv run streamlit run frontend/app/main.py --server.port 8501
-```
-
-6. **Acceder a la aplicación**
-
-**Con Docker (puertos alternativos):**
-- **Frontend (Streamlit)**: http://localhost:8502
-- **Backend API (FastAPI)**: http://localhost:8001/docs
-- **Health Check**: http://localhost:8001/health
-- **PostgreSQL**: localhost:5433
-- **Redis**: localhost:6380
-
-**Con desarrollo local (puertos estándar):**
-- **Frontend (Streamlit)**: http://localhost:8501
-- **Backend API (FastAPI)**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-
-## 📁 Estructura del Proyecto
-
-```
-project_saas/
-├── Dockerfile              # Dockerfile unificado (backend + frontend)
-├── docker-compose.yml      # Orquestación de servicios
-├── start.sh               # Script de inicio
-├── requirements.txt       # Dependencias Python unificadas
-├── .env                   # Variables de entorno
-│
-├── backend/               # Backend FastAPI
-│   └── app/
-│       ├── main.py
-│       ├── core/          # Config, logger, security
-│       ├── domain/        # Modelos de dominio
-│       ├── application/   # Lógica de negocio
-│       ├── infrastructure/# DB, clientes externos
-│       └── web/routers/   # Endpoints API
-│
-└── frontend/              # Frontend Streamlit
-    └── app/
-        ├── main.py
-        ├── pages/
-        └── components/
-```
+---
 
 ## ✨ Features
 
-- 🐛 **Detección de Bugs**: Identifica errores potenciales en tu código
-- 👃 **Code Smells**: Detecta malas prácticas y código que "huele mal"
-- ⚡ **Mejoras de Rendimiento**: Sugiere optimizaciones
-- 📊 **Score de Calidad**: Calificación de 0-100 de tu código
-- 🧠 **Powered by Gemini**: Análisis con IA de última generación
+| Feature | Descripción |
+|---------|-------------|
+| 🐛 **Detección de Bugs** | Identifica errores potenciales |
+| 👃 **Code Smells** | Detecta malas prácticas |
+| ⚡ **Optimización** | Sugiere mejoras de rendimiento |
+| 📊 **Score 0-100** | Calificación de calidad |
+| 🧠 **Gemini 2.5 Flash** | IA de última generación |
 
-## 🏗️ Arquitectura
+---
 
-- **Backend**: FastAPI con arquitectura hexagonal
-- **Frontend**: Streamlit para UI rápida e intuitiva
-- **Base de Datos**: PostgreSQL con pgvector
-- **Cache**: Redis para Celery
-- **IA**: Google Gemini API
+## 📁 Estructura
 
-## 🛠️ Desarrollo
-
-### Comandos Rápidos con Makefile
-
-```bash
-make help          # Ver todos los comandos disponibles
-make install       # Instalar dependencias
-make dev           # Levantar backend + frontend
-make test          # Ejecutar tests
-make lint          # Linting con Ruff
-make format        # Formatear código
-make docker-up     # Levantar con Docker
+```
+project_saas/
+├── backend/app/           # FastAPI (arquitectura hexagonal)
+│   ├── core/              # Config, logger
+│   ├── domain/            # Modelos
+│   ├── application/       # Servicios
+│   ├── infrastructure/    # DB, Gemini client
+│   └── web/routers/       # Endpoints
+├── frontend/app/          # Streamlit UI
+├── docker-compose.yml     # Orquestación
+└── pyproject.toml         # Dependencias (UV)
 ```
 
-### Levantar en modo desarrollo
-```bash
-# Backend (puerto 8000)
-uv run uvicorn backend.app.main:app --reload --port 8000
+---
 
-# Frontend (puerto 8501)
-uv run streamlit run frontend/app/main.py --server.port 8501
+## 🛠️ Comandos
+
+```bash
+make dev          # Desarrollo local
+make docker-up    # Docker completo
+make test         # Tests
+make lint         # Linting (Ruff)
+make format       # Formateo (Black)
 ```
 
-### Instalar dependencias de desarrollo
-```bash
-uv sync --extra dev
-```
-
-### Tests
-```bash
-uv run pytest tests/
-```
-
-### Linting y Formateo
-```bash
-# Formatear código con Black
-uv run black .
-
-# Linting con Ruff
-uv run ruff check .
-
-# Type checking con mypy
-uv run mypy .
-```
-
-### Agregar nuevas dependencias
-```bash
-# Agregar dependencia de producción
-uv add nombre-paquete
-
-# Agregar dependencia de desarrollo
-uv add --dev nombre-paquete
-
-# Actualizar todas las dependencias
-uv lock --upgrade
-```
+---
 
 ## 📚 Documentación
 
-### Documentación del Código (en este directorio):
-- [CONFIG.md](CONFIG.md) - ⚙️ Gestión de configuración (.env)
-- [DEPENDENCIES.md](DEPENDENCIES.md) - 📦 Gestión de dependencias con UV
-- [CONTRIBUTING.md](CONTRIBUTING.md) - 🤝 Guía de contribución
-- [ESTRUCTURA.md](ESTRUCTURA.md) - 📁 Estructura del proyecto
+| Archivo | Contenido |
+|---------|-----------|
+| [CONFIG.md](../AGENTES.md/CONFIG.md) | Variables de entorno |
+| [ESTRUCTURA.md](../AGENTES.md/ESTRUCTURA.md) | Arquitectura hexagonal |
+| [MEJORAS_PROFESIONALES.md](../AGENTES.md/MEJORAS_PROFESIONALES.md) | Roadmap v1 → v2 |
 
-### Documentación del Proyecto (en `../AGENTES.md/`):
-- [ROADMAP.md](../AGENTES.md/ROADMAP.md) - Plan de desarrollo completo
-- [MARKET_RESEARCH.md](../AGENTES.md/MARKET_RESEARCH.md) - Investigación de mercado
-- [MVP_PLAN.md](../AGENTES.md/MVP_PLAN.md) - Plan del MVP
-- [Practicas_Python.md](../AGENTES.md/Practicas_Python.md) - Guía de estilo y arquitectura
-- [Arquitectura.md](../AGENTES.md/Arquitectura.md) - Arquitectura del sistema
-- [Proyecto.md](../AGENTES.md/Proyecto.md) - Descripción general
+---
 
-## 🤝 Contribuir
+## 🎯 Roadmap v1.0
 
-Este proyecto está en fase MVP. Feedback y contribuciones son bienvenidos!
+- [x] MVP funcional con Gemini
+- [x] Docker optimizado
+- [ ] Autenticación JWT
+- [ ] PostgreSQL activo
+- [ ] Rate limiting
+- [ ] Tests (60% cobertura)
+- [ ] CI/CD GitHub Actions
+
+---
+
+## 🏗️ Stack
+
+- **Backend:** FastAPI + Python 3.12
+- **Frontend:** Streamlit
+- **IA:** Google Gemini 2.5 Flash
+- **DB:** PostgreSQL + Redis
+- **Tools:** UV, Docker, Ruff, Black
+
+---
 
 ## 📝 Licencia
 
 MIT License
-
----
 
 **Made with ❤️ by Neural SaaS Platform**

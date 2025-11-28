@@ -1,62 +1,114 @@
 # frontend/app/main.py
 
-import streamlit as st
-import requests
-from datetime import datetime
 import os
+from datetime import datetime
+
+import requests
+import streamlit as st
 
 # Configuración de la página
 st.set_page_config(
     page_title="Neural Code Analyzer",
     page_icon="🧠",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# URL del backend (desde variable de entorno o default)
-# Dentro del contenedor Docker, ambos servicios están en localhost
+# URL del backend
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
-# Título principal
-st.title("🧠 Neural Code Analyzer")
-st.markdown("### Analiza tu código Python con IA")
-st.markdown("---")
 
-# Sidebar
+# ----------------- HELPERS -----------------
+
+
+def get_auth_headers() -> dict:
+    """Obtener headers con token JWT si está logueado."""
+    if "token" in st.session_state and st.session_state.token:
+        return {"Authorization": f"Bearer {st.session_state.token}"}
+    return {}
+
+
+def is_logged_in() -> bool:
+    """Verificar si el usuario está logueado."""
+    return "token" in st.session_state and st.session_state.token is not None
+
+
+def get_user_stats() -> dict:
+    """Obtener estadísticas del usuario desde el backend."""
+    if not is_logged_in():
+        return {"analisis_hoy": 0, "score_promedio": 0, "limite_diario": 5}
+    try:
+        response = requests.get(
+            f"{BACKEND_URL}/api/analysis/stats",
+            headers=get_auth_headers(),
+            timeout=5,
+        )
+        if response.status_code == 200:
+            return response.json()
+    except Exception:
+        pass
+    return {"analisis_hoy": 0, "score_promedio": 0, "limite_diario": 5}
+
+
+# ----------------- SIDEBAR -----------------
+
 with st.sidebar:
-    st.header("⚙️ Configuración")
-    
-    # URL del backend (editable)
-    backend_url = st.text_input(
-        "URL del Backend",
-        value=BACKEND_URL,
-        help="URL de la API FastAPI"
-    )
-    
+    # Info de usuario
+    if is_logged_in():
+        user = st.session_state.get("user", {})
+        st.success(f"👤 {user.get('email', 'Usuario')}")
+        st.caption(f"Plan: {user.get('role', 'free').upper()}")
+        if user.get("has_own_api_key"):
+            st.caption("🔑 API Key propia")
+        if st.button("🚪 Cerrar Sesión", use_container_width=True):
+            del st.session_state["token"]
+            del st.session_state["user"]
+            st.rerun()
+    else:
+        st.warning("👤 Modo Anónimo")
+        st.caption("Funciones limitadas")
+        if st.button("🔐 Iniciar Sesión", use_container_width=True, type="primary"):
+            st.switch_page("pages/login.py")
+
     st.markdown("---")
-    
-    # Estadísticas (placeholder)
+
+    # Estadísticas
     st.markdown("### 📊 Estadísticas")
+    stats = get_user_stats()
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Análisis Hoy", "0")
+        st.metric("Hoy", stats.get("analisis_hoy", 0))
     with col2:
-        st.metric("Score Promedio", "0")
-    
+        st.metric("Score", stats.get("score_promedio", 0))
+
+    if is_logged_in():
+        limite = stats.get("limite_diario", 5)
+        usado = stats.get("analisis_hoy", 0)
+        st.progress(min(usado / limite, 1.0), text=f"{usado}/{limite} análisis")
+
     st.markdown("---")
-    
-    # Información
+
+    # Info
     st.markdown("### ℹ️ Información")
-    st.markdown("""
+    st.markdown(
+        """
     **Neural Code Analyzer** usa IA para:
     - 🐛 Detectar bugs potenciales
     - 👃 Identificar code smells
-    - ⚡ Sugerir mejoras de rendimiento
-    - 📊 Calcular score de calidad
-    """)
-    
+    - ⚡ Sugerir mejoras
+    - 📊 Score de calidad
+    """
+    )
+
     st.markdown("---")
-    st.markdown("**Versión:** 0.1.0 MVP")
+    st.markdown("**Versión:** 1.0.0")
+
+# ----------------- MAIN -----------------
+
+# Título
+st.title("🧠 Neural Code Analyzer")
+st.markdown("### Analiza tu código Python con IA")
+st.markdown("---")
 
 # Preparar valor inicial del editor (ANTES de renderizar)
 valor_inicial = ""
@@ -275,11 +327,12 @@ if analizar_button:
         with results_container:
             with st.spinner("🤖 Analizando tu código..."):
                 try:
-                    # Llamar al backend
+                    # Llamar al backend con token JWT si está logueado
                     response = requests.post(
-                        f"{backend_url}/api/analysis/",
+                        f"{BACKEND_URL}/api/analysis/",
                         json={"codigo": codigo_input},
-                        timeout=60
+                        headers=get_auth_headers(),
+                        timeout=60,
                     )
                     
                     if response.status_code == 200:
@@ -430,7 +483,7 @@ if analizar_button:
                     st.error("⏱️ Timeout: El análisis tomó demasiado tiempo. Intenta con código más corto.")
                     
                 except requests.exceptions.ConnectionError:
-                    st.error(f"❌ No se pudo conectar al backend en {backend_url}")
+                    st.error(f"❌ No se pudo conectar al backend en {BACKEND_URL}")
                     st.info("💡 Asegúrate de que el backend esté corriendo en el puerto correcto")
                     
                 except Exception as e:
@@ -444,12 +497,12 @@ with col_footer1:
     st.markdown("Made with ❤️ by **Neural SaaS Platform**")
 
 with col_footer2:
-    st.markdown(f"Backend: `{backend_url}`")
+    st.markdown(f"Backend: `{BACKEND_URL}`")
 
 with col_footer3:
     if st.button("🔄 Verificar Backend"):
         try:
-            response = requests.get(f"{backend_url}/health", timeout=5)
+            response = requests.get(f"{BACKEND_URL}/health", timeout=5)
             if response.status_code == 200:
                 st.success("✅ Backend conectado")
             else:

@@ -4,8 +4,9 @@ FROM python:3.12-slim
 # Variables de entorno
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    UV_SYSTEM_PYTHON=1 \
-    APP_HOME=/app
+    APP_HOME=/app \
+    VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
 
 # Crear directorio de trabajo
 WORKDIR $APP_HOME
@@ -16,20 +17,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar UV usando pip (más confiable en Docker)
+# Instalar UV usando pip
 RUN pip install --no-cache-dir uv
 
-# Copiar código de la aplicación primero (necesario para pyproject.toml)
+# Copiar código de la aplicación
 COPY . .
 
-# Dar permisos a los scripts ANTES de instalar
+# Dar permisos a los scripts
 RUN chmod +x scripts/*.sh
 
-# Instalar dependencias con UV (mucho más rápido que pip)
+# Crear venv e instalar dependencias con UV
+# uv sync crea el venv automáticamente y usa pyproject.toml + uv.lock
 RUN uv sync --frozen
 
 # Exponer puertos (FastAPI: 8000, Streamlit: 8501)
 EXPOSE 8000 8501
 
-# Comando por defecto: ejecutar script que levanta ambos servicios
+# Comando por defecto
 CMD ["/bin/bash", "./scripts/start.sh"]
