@@ -49,6 +49,7 @@ services:
       - "${FRONTEND_PORT_HOST}:${STREAMLIT_PORT}"
     volumes:
       - .:/app:cached
+      - /app/.venv  # Excluir venv del volumen montado
     depends_on:
       db:
         condition: service_healthy

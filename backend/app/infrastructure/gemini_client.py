@@ -137,14 +137,24 @@ class GeminiClient:
             }],
             "generationConfig": {
                 "temperature": 0.3,
-                "maxOutputTokens": 4096,  # Aumentado para incluir código completo
+                "maxOutputTokens": 16384,  # Aumentado para gemini-2.5-flash con thinking
                 "topP": 0.8,
                 "topK": 10
             }
         }
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        # Timeout extendido: Gemini 2.5 Flash con thinking puede tardar 2-3 minutos
+        # connect=10s, read=180s (3 min), write=30s, pool=10s
+        timeout_config = httpx.Timeout(
+            connect=10.0,
+            read=180.0,  # 3 minutos para respuesta completa
+            write=30.0,
+            pool=10.0
+        )
+        
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
             try:
+                logger.info(f"Enviando código a Gemini ({len(code)} chars)...")
                 resp = await client.post(url, headers=self.headers, json=payload)
                 resp.raise_for_status()
                 data = resp.json()
@@ -152,15 +162,25 @@ class GeminiClient:
                 # Extraer texto de la respuesta de Gemini
                 if "candidates" in data and len(data["candidates"]) > 0:
                     candidate = data["candidates"][0]
+                    
+                    # Verificar si se cortó por MAX_TOKENS
+                    finish_reason = candidate.get("finishReason", "")
+                    if finish_reason == "MAX_TOKENS":
+                        logger.warning("Respuesta truncada por MAX_TOKENS")
+                    
                     if "content" in candidate and "parts" in candidate["content"]:
                         parts = candidate["content"]["parts"]
                         if len(parts) > 0 and "text" in parts[0]:
                             analysis = parts[0]["text"]
+                            logger.info(f"Análisis recibido ({len(analysis)} chars)")
                             return analysis
                 
                 logger.warning(f"No se recibió análisis en formato esperado: {data}")
                 return "⚠️ No se pudo generar el análisis"
                 
+            except httpx.TimeoutException as e:
+                logger.error(f"Timeout al analizar código: {e}")
+                return "⏱️ **Timeout**: El análisis está tomando más tiempo del esperado.\n\n**Sugerencias:**\n- Intenta de nuevo (a veces Gemini tarda más)\n- Divide el código en partes más pequeñas\n- El modelo está procesando, puede ser temporal"
             except httpx.HTTPStatusError as e:
                 logger.error(f"HTTP error al analizar código: {e.response.text}")
                 return f"❌ Error HTTP: {e.response.status_code}\n\nDetalles: {e.response.text[:200]}"

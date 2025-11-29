@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/analysis", tags=["Análisis de Código"])
 class AnalysisRequest(BaseModel):
     """Request para análisis de código."""
 
-    codigo: str = Field(..., description="Código Python a analizar", min_length=1, max_length=10000)
+    codigo: str = Field(..., description="Código Python a analizar", min_length=1, max_length=50000)
 
     class Config:
         json_schema_extra = {"example": {"codigo": "def suma(a, b):\n    return a + b"}}

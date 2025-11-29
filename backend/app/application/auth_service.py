@@ -5,18 +5,24 @@ import re
 from datetime import datetime, timedelta
 from typing import Optional
 
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.domain.models import User
 
 logger = logging.getLogger(__name__)
 
-# Contexto para hashing de passwords
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Hasher Argon2 con configuración segura (OWASP recomendado)
+ph = PasswordHasher(
+    time_cost=3,        # Iteraciones
+    memory_cost=65536,  # 64MB de memoria
+    parallelism=4,      # Hilos paralelos
+)
 
 
 class AuthService:
@@ -29,13 +35,19 @@ class AuthService:
 
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hashear password con bcrypt."""
-        return pwd_context.hash(password)
+        """Hashear password con Argon2id (más seguro que bcrypt)."""
+        return ph.hash(password)
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verificar password contra hash."""
-        return pwd_context.verify(plain_password, hashed_password)
+        """Verificar password contra hash Argon2."""
+        try:
+            ph.verify(hashed_password, plain_password)
+            return True
+        except VerifyMismatchError:
+            return False
+        except Exception:
+            return False
 
     # ----------------- JWT -----------------
 
@@ -88,13 +100,21 @@ class AuthService:
     # ----------------- USER OPERATIONS -----------------
 
     async def get_user_by_email(self, email: str) -> Optional[User]:
-        """Obtener usuario por email."""
-        result = await self.db.execute(select(User).where(User.email == email.lower()))
+        """Obtener usuario por email con su role cargado."""
+        result = await self.db.execute(
+            select(User)
+            .options(selectinload(User.role))
+            .where(User.email == email.lower())
+        )
         return result.scalars().first()
 
     async def get_user_by_id(self, user_id: int) -> Optional[User]:
-        """Obtener usuario por ID."""
-        result = await self.db.execute(select(User).where(User.id == user_id))
+        """Obtener usuario por ID con su role cargado."""
+        result = await self.db.execute(
+            select(User)
+            .options(selectinload(User.role))
+            .where(User.id == user_id)
+        )
         return result.scalars().first()
 
     async def register_user(

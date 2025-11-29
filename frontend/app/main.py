@@ -113,14 +113,24 @@ st.markdown("---")
 # Preparar valor inicial del editor (ANTES de renderizar)
 valor_inicial = ""
 
-# Cargar ejemplo si existe en session_state
-if 'codigo_ejemplo' in st.session_state:
-    valor_inicial = st.session_state['codigo_ejemplo']
-    del st.session_state['codigo_ejemplo']
+# Inicializar contador de key para el text_area (permite forzar reset)
+if 'editor_key' not in st.session_state:
+    st.session_state['editor_key'] = 0
 
+# Si se pidió limpiar, forzar valor vacío e incrementar key
+if 'limpiar_codigo' in st.session_state:
+    valor_inicial = ""
+    st.session_state['editor_key'] += 1  # Cambiar key fuerza nuevo widget
+    del st.session_state['limpiar_codigo']
+# Cargar ejemplo si existe en session_state
+elif 'codigo_ejemplo' in st.session_state:
+    valor_inicial = st.session_state['codigo_ejemplo']
+    st.session_state['editor_key'] += 1  # Cambiar key para aplicar nuevo valor
+    del st.session_state['codigo_ejemplo']
 # Cargar código mejorado si se aplicó (tiene prioridad)
-if 'codigo_aplicado' in st.session_state:
+elif 'codigo_aplicado' in st.session_state:
     valor_inicial = st.session_state['codigo_aplicado']
+    st.session_state['editor_key'] += 1  # Cambiar key para aplicar nuevo valor
     del st.session_state['codigo_aplicado']
 
 # Layout principal con dos columnas
@@ -129,7 +139,7 @@ col_left, col_right = st.columns([1, 1])
 with col_left:
     st.subheader("📝 Tu Código Python")
     
-    # Editor de código
+    # Editor de código (key dinámica permite forzar reset)
     codigo_input = st.text_area(
         "Pega tu código Python aquí:",
         value=valor_inicial,
@@ -137,7 +147,8 @@ with col_left:
         placeholder="""def ejemplo():
     # Tu código aquí
     pass""",
-        help="Escribe o pega el código Python que quieres analizar"
+        help="Escribe o pega el código Python que quieres analizar",
+        key=f"code_editor_{st.session_state['editor_key']}"
     )
     
     # Botón de análisis
@@ -176,6 +187,15 @@ with col_right:
 
 # Lógica de botones
 if limpiar_button:
+    # Limpiar todo el estado relacionado con el análisis
+    if 'ultimo_analisis' in st.session_state:
+        del st.session_state['ultimo_analisis']
+    if 'codigo_ejemplo' in st.session_state:
+        del st.session_state['codigo_ejemplo']
+    if 'codigo_aplicado' in st.session_state:
+        del st.session_state['codigo_aplicado']
+    # Forzar limpieza del text_area usando una key
+    st.session_state['limpiar_codigo'] = True
     st.rerun()
 
 if ejemplo_button:
@@ -325,14 +345,15 @@ if analizar_button:
             st.error("⚠️ Por favor ingresa código para analizar")
     else:
         with results_container:
-            with st.spinner("🤖 Analizando tu código..."):
+            with st.spinner("🤖 Analizando tu código con Gemini 2.5 Flash... (puede tardar hasta 3 minutos)"):
                 try:
                     # Llamar al backend con token JWT si está logueado
+                    # Timeout extendido: Gemini 2.5 Flash con thinking puede tardar 2-3 min
                     response = requests.post(
                         f"{BACKEND_URL}/api/analysis/",
                         json={"codigo": codigo_input},
                         headers=get_auth_headers(),
-                        timeout=60,
+                        timeout=200,  # 3+ minutos para análisis complejos
                     )
                     
                     if response.status_code == 200:
@@ -480,7 +501,8 @@ if analizar_button:
                         st.error(f"❌ Error {response.status_code}: {response.text}")
                         
                 except requests.exceptions.Timeout:
-                    st.error("⏱️ Timeout: El análisis tomó demasiado tiempo. Intenta con código más corto.")
+                    st.error("⏱️ **Timeout**: El análisis excedió los 3 minutos.")
+                    st.info("💡 **Sugerencias:**\n- Intenta de nuevo (Gemini puede estar ocupado)\n- El modelo está procesando tu código, a veces tarda más\n- Si persiste, divide el código en partes")
                     
                 except requests.exceptions.ConnectionError:
                     st.error(f"❌ No se pudo conectar al backend en {BACKEND_URL}")

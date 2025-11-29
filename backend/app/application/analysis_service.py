@@ -83,10 +83,10 @@ class AnalysisService:
                     "timestamp": datetime.now().isoformat(),
                 }
 
-            if len(codigo) > 10000:
+            if len(codigo) > 50000:
                 return {
                     "success": False,
-                    "error": "El código es demasiado largo (máximo 10,000 caracteres)",
+                    "error": "El código es demasiado largo (máximo 50,000 caracteres)",
                     "codigo": codigo[:100] + "...",
                     "timestamp": datetime.now().isoformat(),
                 }
