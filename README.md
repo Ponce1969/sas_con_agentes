@@ -1,103 +1,192 @@
+
+
 # 🧠 Neural Code Analyzer
 
-**Plataforma SaaS de análisis de código Python con IA**
-
-> Gemini 2.5 Flash · FastAPI · Streamlit · PostgreSQL
+**Plataforma SaaS de análisis de código Python con IA**  
+*Gemini 2.5 Flash · FastAPI · Streamlit · PostgreSQL*
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Comenzar en 60 Segundos
 
 ```bash
+# 1. Clonar y configurar
 git clone https://github.com/Ponce1969/sas_con_agentes.git
 cd project_saas
-cp .env.example .env   # Configurar GEMINI_API_KEY
+cp .env.example .env
+
+# 2. Configurar API Key (obtener en: https://aistudio.google.com/)
+echo "GEMINI_API_KEY=tu_api_key_aqui" >> .env
+
+# 3. Ejecutar
 docker compose up -d
-```
 
-- **App:** http://localhost:8502
-- **API:** http://localhost:8001/docs
+# 4. ¡Listo!
+# 🌐 App: http://localhost:8502
+# 📚 API Docs: http://localhost:8001/docs
 
----
+✨ ¿Qué Puede Hacer?
+🔍 Análisis Inteligente
 
-## ✨ Features
+    🐛 Bugs potenciales - Detecta errores antes de producción
 
-| Core | Dashboard | Seguridad |
-|------|-----------|-----------|
-| 🐛 Detección de bugs | 📊 Estadísticas | 🔐 JWT Auth |
-| 👃 Code smells | 🏆 Logros/Gamificación | 🔒 API keys encriptadas |
-| ⚡ Optimizaciones | 💡 Insights automáticos | 📏 Límite 800 líneas |
-| 📊 Score 0-100 | 📥 Exportar CSV | 🛡️ Rate limiting |
+    👃 Code smells - Identifica malas prácticas
 
----
+    ⚡ Optimizaciones - Sugiere mejoras de rendimiento
 
-## 🏗️ Arquitectura
+    📊 Score 0-100 - Calificación automática de calidad
 
-```
+📈 Dashboard Interactivo
+
+    📊 Métricas en tiempo real - Tus estadísticas de uso
+
+    🏆 Sistema de logros - Gamificación para desarrolladores
+
+    💡 Insights automáticos - Tips personalizados para mejorar
+
+    📥 Exportar datos - CSV/JSON para análisis externo
+
+🔒 Seguridad Empresarial
+
+    🔐 Autenticación JWT - Login seguro con Argon2
+
+    🔒 Encriptación AES-128 - API keys protegidas
+
+    📏 Límites configurables - 800 líneas por análisis
+
+    🛡️ Rate limiting - Protección contra abuso
+
+🏗️ Arquitectura
+
+
 project_saas/
-├── backend/app/
-│   ├── core/              # Config, seguridad
-│   ├── domain/            # Modelos SQLAlchemy
-│   ├── application/       # Servicios (análisis, auth)
-│   ├── infrastructure/    # Gemini client, encriptación
-│   └── web/routers/       # API endpoints
-├── frontend/app/
-│   ├── main.py            # Analizador principal
-│   └── pages/             # Dashboard, login
-├── deploy/                # Scripts OrangePi + Cloudflare
-└── docker-compose.yml
-```
+├── backend/app/          # FastAPI + PostgreSQL
+│   ├── core/            # Configuración y seguridad
+│   ├── domain/          # Modelos de datos
+│   ├── application/     # Lógica de negocio
+│   └── web/routers/     # Endpoints API
+├── frontend/app/        # Streamlit Dashboard
+│   ├── main.py          # Aplicación principal
+│   └── pages/           # Vistas (login, dashboard)
+├── deploy/              # Scripts de deployment
+└── docker-compose.yml   # Orquestación containers
 
----
+Stack Tecnológico: Python 3.12, FastAPI, Streamlit, Gemini 2.5 Flash, PostgreSQL, Redis, Docker
+⚙️ Configuración Rápida
+Variables Esenciales (.env)
+bash
 
-## 🛠️ Stack
+# Obtener en: https://aistudio.google.com/
+GEMINI_API_KEY=tu_clave_gemini_aqui
 
-| Capa | Tecnología |
-|------|------------|
-| Backend | FastAPI + Python 3.12 |
-| Frontend | Streamlit |
-| IA | Gemini 2.5 Flash |
-| DB | PostgreSQL + Redis |
-| Auth | JWT + Argon2 |
-| Encriptación | Fernet (AES-128) |
-| Deploy | Docker + Cloudflare Tunnel |
+# Generar con:
+# python -c "import secrets; print(secrets.token_urlsafe(64))"
+JWT_SECRET_KEY=clave_jwt_super_secreta
 
----
+# Generar con:
+# python -c "import secrets; print(secrets.token_urlsafe(32))"
+ENCRYPTION_KEY=clave_encriptacion_32_chars
 
-## 📋 Comandos
+# Base de datos (automático con Docker)
+DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/neuraldb
 
-```bash
-docker compose up -d      # Iniciar
-docker compose logs -f    # Ver logs
-docker compose down       # Detener
-```
+Comandos Diarios
+bash
 
----
+# Iniciar toda la aplicación
+docker compose up -d
 
-## 🚀 Deploy (OrangePi/Self-hosted)
+# Ver logs en tiempo real
+docker compose logs -f frontend
 
-```bash
+# Detener servicios
+docker compose down
+
+# Backup de base de datos
+docker compose exec db pg_dump -U postgres neuraldb > backup.sql
+
+📊 Planes y Límites
+Característica	Free 🆓	Pro 💎	Enterprise 🏢
+Análisis por día	5	50	Ilimitado
+Líneas por análisis	800	800	2000
+Historial	30 días	1 año	Ilimitado
+Soporte	Comunidad	Email prioritario	24/7 dedicado
+Precio	Gratis	$9.99/mes	Personalizado
+🔌 Uso de la API
+Análisis de Código
+python
+
+import requests
+
+url = "http://localhost:8001/api/analysis"
+headers = {"Authorization": "Bearer tu_jwt_token"}
+data = {"code": "def ejemplo(): pass"}
+
+response = requests.post(url, json=data, headers=headers)
+print(response.json())
+
+Endpoints Principales
+
+    POST /api/analysis - Analizar código Python
+
+    GET /api/analysis/history - Obtener historial
+
+    POST /api/auth/login - Iniciar sesión
+
+    GET /api/auth/me - Perfil de usuario
+
+📚 Ver documentación completa de la API
+🚀 Deployment
+Opción 1: Docker (Recomendado para Desarrollo)
+bash
+
+# Desarrollo local
+docker compose up -d
+
+# Producción
+docker compose -f docker-compose.prod.yml up -d
+
+Opción 2: OrangePi + Cloudflare (Auto-hosting)
+bash
+
+# Configuración automática para OrangePi 5+
 sudo bash deploy/setup-orangepi.sh
-```
 
-Ver [deploy/DEPLOY_ORANGEPI.md](deploy/DEPLOY_ORANGEPI.md)
+🚀 Guía completa de deployment en OrangePi
+❓ Preguntas Frecuentes
 
----
+¿Necesito tarjeta de crédito?
+No, el plan free es completamente gratuito sin requerir tarjeta.
 
-## 📋 Estado del Proyecto
+¿Qué lenguajes soporta?
+Actualmente solo Python. JavaScript/Go en desarrollo.
 
-**90% listo para producción**
+¿Mis códigos se almacenan?
+Solo métricas y scores, nunca el código fuente.
 
-| ✅ Implementado | 🚧 Pendiente |
-|----------------|--------------|
-| Análisis con Gemini 2.5 | Sistema de planes (free/pro) |
-| Auth JWT + Argon2 | Panel administrativo |
-| Dashboard + Gamificación | Rate limiting con Redis |
-| Encriptación API keys | Logs estructurados |
-| Deploy OrangePi/Cloudflare | CI/CD GitHub Actions |
+¿Puedo usar en mi empresa?
+Sí, el plan Enterprise incluye soporte corporativo.
+📚 Documentación Adicional
 
----
+    🏗️ Arquitectura del Sistema
 
-## 📝 Licencia
+    🔧 Configuración Avanzada
 
-MIT · **Neural SaaS Platform**
+    🚀 Deployment OrangePi
+
+    🐛 Reportar Issues
+
+🛠️ Estado del Proyecto
+
+✅ Listo para Producción - v1.0.0
+✅ Completado	🚧 Próximamente
+Análisis Python con Gemini 2.5	Panel administrativo
+Dashboard interactivo	Soporte JavaScript/Go
+Auth JWT + Security	Sistema de facturación
+Deployment OrangePi	API más lenguajes
+📄 Licencia
+
+MIT License - Neural Code Analyzer
+¿Preguntas? ✉️ gompatri@gmail.com
+
+¿Te gusta el proyecto? ⭐ Dale una estrella en GitHub
