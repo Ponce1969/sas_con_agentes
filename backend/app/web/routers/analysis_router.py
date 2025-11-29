@@ -1,5 +1,6 @@
 # backend/app/web/routers/analysis_router.py
 
+import logging
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,7 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.analysis_service import AnalysisService
 from app.domain.models import User
 from app.infrastructure.database import get_db
+from app.infrastructure.encryption import get_encryption_service
 from app.web.routers.auth_router import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/analysis", tags=["Análisis de Código"])
 
@@ -20,7 +24,7 @@ router = APIRouter(prefix="/api/analysis", tags=["Análisis de Código"])
 class AnalysisRequest(BaseModel):
     """Request para análisis de código."""
 
-    codigo: str = Field(..., description="Código Python a analizar", min_length=1, max_length=50000)
+    codigo: str = Field(..., description="Código Python a analizar", min_length=1, max_length=40000)
 
     class Config:
         json_schema_extra = {"example": {"codigo": "def suma(a, b):\n    return a + b"}}
@@ -67,10 +71,16 @@ async def analizar_codigo(
     # Obtener user_id si está autenticado
     user_id = current_user.id if current_user else None
 
-    # Obtener API key del usuario si tiene una propia
+    # Obtener y desencriptar API key del usuario si tiene una propia
     user_api_key = None
     if current_user and current_user.gemini_api_key_encrypted:
-        user_api_key = current_user.gemini_api_key_encrypted  # TODO: Desencriptar
+        try:
+            encryption = get_encryption_service()
+            user_api_key = encryption.decrypt(current_user.gemini_api_key_encrypted)
+            logger.info(f"🔓 API key desencriptada para usuario: {current_user.email}")
+        except Exception as e:
+            logger.error(f"Error al desencriptar API key: {e}")
+            # Si falla la desencriptación, usar la key del sistema
 
     resultado = await service.analizar_codigo(
         codigo=request.codigo,

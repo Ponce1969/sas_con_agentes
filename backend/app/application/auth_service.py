@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.domain.models import User
+from app.infrastructure.encryption import get_encryption_service
 
 logger = logging.getLogger(__name__)
 
@@ -145,12 +146,19 @@ class AuthService:
         # Determinar rol (custom si tiene API key propia)
         role_id = 3 if gemini_api_key else 1  # 3=custom, 1=free
 
+        # Encriptar API key si se proporciona
+        encrypted_api_key = None
+        if gemini_api_key:
+            encryption = get_encryption_service()
+            encrypted_api_key = encryption.encrypt(gemini_api_key)
+            logger.info(f"🔐 API key encriptada para usuario: {email}")
+
         # Crear usuario
         user = User(
             email=email.lower(),
             hashed_password=self.hash_password(password),
             full_name=full_name,
-            gemini_api_key_encrypted=gemini_api_key,  # TODO: Encriptar con Fernet
+            gemini_api_key_encrypted=encrypted_api_key,
             role_id=role_id,
             is_active=True,
         )

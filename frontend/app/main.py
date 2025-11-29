@@ -85,6 +85,10 @@ with st.sidebar:
         limite = stats.get("limite_diario", 5)
         usado = stats.get("analisis_hoy", 0)
         st.progress(min(usado / limite, 1.0), text=f"{usado}/{limite} análisis")
+        
+        # Botón para ir al dashboard
+        if st.button("📊 Ver Dashboard", use_container_width=True):
+            st.switch_page("pages/dashboard.py")
 
     st.markdown("---")
 
@@ -139,6 +143,10 @@ col_left, col_right = st.columns([1, 1])
 with col_left:
     st.subheader("📝 Tu Código Python")
     
+    # Límites de código (buenas prácticas)
+    MAX_CARACTERES = 40000
+    MAX_LINEAS = 800  # Más de 800 líneas = code smell severo
+    
     # Editor de código (key dinámica permite forzar reset)
     codigo_input = st.text_area(
         "Pega tu código Python aquí:",
@@ -151,6 +159,46 @@ with col_left:
         key=f"code_editor_{st.session_state['editor_key']}"
     )
     
+    # Mostrar contador de líneas y caracteres
+    if codigo_input:
+        num_lineas = len(codigo_input.split('\n'))
+        num_caracteres = len(codigo_input)
+        porcentaje_lineas = (num_lineas / MAX_LINEAS) * 100
+        porcentaje_chars = (num_caracteres / MAX_CARACTERES) * 100
+        
+        # Determinar color según líneas (más importante para buenas prácticas)
+        if num_lineas > MAX_LINEAS or num_caracteres > MAX_CARACTERES:
+            color = "🔴"
+        elif porcentaje_lineas > 70 or porcentaje_chars > 70:
+            color = "🟡"
+        else:
+            color = "🟢"
+        
+        # Mostrar métricas
+        col_m1, col_m2, col_m3 = st.columns(3)
+        with col_m1:
+            st.caption(f"📏 **{num_lineas}** / {MAX_LINEAS} líneas")
+        with col_m2:
+            st.caption(f"📝 **{num_caracteres:,}** chars")
+        with col_m3:
+            st.caption(f"{color} **{porcentaje_lineas:.0f}%**")
+        
+        # Advertencias y errores
+        if num_lineas > MAX_LINEAS:
+            st.error(f"❌ **Demasiadas líneas!** Tu código tiene {num_lineas} líneas. Máximo: {MAX_LINEAS}. Divide tu código en módulos.")
+        elif num_caracteres > MAX_CARACTERES:
+            st.error(f"❌ **Límite excedido!** Tu código tiene {num_caracteres:,} caracteres. Máximo: {MAX_CARACTERES:,}")
+        elif num_lineas > 500:
+            st.warning(f"⚠️ **{num_lineas} líneas** es mucho. Considera refactorizar en funciones/clases más pequeñas.")
+        elif num_lineas > 300:
+            st.info(f"💡 Tip: Archivos de +300 líneas suelen beneficiarse de ser divididos en módulos.")
+    
+    # Verificar si el código excede algún límite
+    codigo_excede_limite = False
+    if codigo_input:
+        num_lineas = len(codigo_input.split('\n'))
+        codigo_excede_limite = num_lineas > MAX_LINEAS or len(codigo_input) > MAX_CARACTERES
+    
     # Botón de análisis
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
     
@@ -158,7 +206,8 @@ with col_left:
         analizar_button = st.button(
             "🔍 Analizar Código",
             type="primary",
-            use_container_width=True
+            use_container_width=True,
+            disabled=codigo_excede_limite  # Deshabilitar si excede límite
         )
     
     with col_btn2:
@@ -172,12 +221,6 @@ with col_left:
             "📄 Ejemplo",
             use_container_width=True
         )
-    
-    # Información del código
-    if codigo_input:
-        lineas = len(codigo_input.split('\n'))
-        caracteres = len(codigo_input)
-        st.caption(f"📏 {lineas} líneas | {caracteres} caracteres")
 
 with col_right:
     st.subheader("📊 Resultados del Análisis")

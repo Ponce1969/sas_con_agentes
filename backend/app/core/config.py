@@ -25,31 +25,31 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = True
 
-    # --- Database ---
+    # --- Database (TODO: Todas desde .env) ---
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
-    POSTGRES_USER: str = "neural_user"
-    POSTGRES_PASSWORD: str = "neural_password_2024"
-    POSTGRES_DB: str = "neural_saas_db"
-    POSTGRES_HOST: str = "db"
-    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = Field(default="neural_user", env="POSTGRES_USER")
+    POSTGRES_PASSWORD: str = Field(..., env="POSTGRES_PASSWORD")
+    POSTGRES_DB: str = Field(default="neural_saas_db", env="POSTGRES_DB")
+    POSTGRES_HOST: str = Field(default="db", env="POSTGRES_HOST")
+    POSTGRES_PORT: int = Field(default=5432, env="POSTGRES_PORT")
 
     # --- Seguridad JWT ---
     JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
-    JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, env="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
 
     # --- API Keys ---
     GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
-    GEMINI_MODEL: str = "gemini-2.5-flash"  # Modelo más moderno y potente
+    GEMINI_MODEL: str = Field(default="gemini-2.5-flash", env="GEMINI_MODEL")
 
     # --- Redis ---
-    REDIS_HOST: str = "redis"
-    REDIS_PORT: int = 6379
-    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_HOST: str = Field(default="redis", env="REDIS_HOST")
+    REDIS_PORT: int = Field(default=6379, env="REDIS_PORT")
+    REDIS_URL: str = Field(default="redis://redis:6379/0", env="REDIS_URL")
 
     # --- Celery ---
-    CELERY_BROKER_URL: str = "redis://redis:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
+    CELERY_BROKER_URL: str = Field(default="redis://redis:6379/0", env="CELERY_BROKER_URL")
+    CELERY_RESULT_BACKEND: str = Field(default="redis://redis:6379/0", env="CELERY_RESULT_BACKEND")
 
     # --- CORS ---
     @property

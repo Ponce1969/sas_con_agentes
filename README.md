@@ -1,110 +1,89 @@
 # 🧠 Neural Code Analyzer
 
-**Plataforma SaaS para análisis de código Python con IA (Gemini 2.5 Flash)**
+**Plataforma SaaS de análisis de código Python con IA**
 
-> **Versión:** 1.0.0-beta | **Estado:** MVP Funcional
+> Gemini 2.5 Flash · FastAPI · Streamlit · PostgreSQL
 
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-# 1. Clonar y entrar al proyecto
 git clone https://github.com/Ponce1969/sas_con_agentes.git
 cd project_saas
-
-# 2. Configurar API Key de Gemini
-cp .env.example .env
-nano .env  # Agregar: GEMINI_API_KEY=tu_key
-
-# 3. Instalar dependencias
-uv sync
-
-# 4. Levantar servicios
-make dev  # O: docker-compose up --build
+cp .env.example .env   # Configurar GEMINI_API_KEY
+docker compose up -d
 ```
 
-**URLs:**
-- Frontend: http://localhost:8501
-- API Docs: http://localhost:8000/docs
+- **App:** http://localhost:8502
+- **API:** http://localhost:8001/docs
 
 ---
 
 ## ✨ Features
 
-| Feature | Descripción |
-|---------|-------------|
-| 🐛 **Detección de Bugs** | Identifica errores potenciales |
-| 👃 **Code Smells** | Detecta malas prácticas |
-| ⚡ **Optimización** | Sugiere mejoras de rendimiento |
-| 📊 **Score 0-100** | Calificación de calidad |
-| 🧠 **Gemini 2.5 Flash** | IA de última generación |
+| Core | Dashboard | Seguridad |
+|------|-----------|-----------|
+| 🐛 Detección de bugs | 📊 Estadísticas | 🔐 JWT Auth |
+| 👃 Code smells | 🏆 Logros/Gamificación | 🔒 API keys encriptadas |
+| ⚡ Optimizaciones | 💡 Insights automáticos | 📏 Límite 800 líneas |
+| 📊 Score 0-100 | 📥 Exportar CSV | 🛡️ Rate limiting |
 
 ---
 
-## 📁 Estructura
+## 🏗️ Arquitectura
 
 ```
 project_saas/
-├── backend/app/           # FastAPI (arquitectura hexagonal)
-│   ├── core/              # Config, logger
-│   ├── domain/            # Modelos
-│   ├── application/       # Servicios
-│   ├── infrastructure/    # DB, Gemini client
-│   └── web/routers/       # Endpoints
-├── frontend/app/          # Streamlit UI
-├── docker-compose.yml     # Orquestación
-└── pyproject.toml         # Dependencias (UV)
+├── backend/app/
+│   ├── core/              # Config, seguridad
+│   ├── domain/            # Modelos SQLAlchemy
+│   ├── application/       # Servicios (análisis, auth)
+│   ├── infrastructure/    # Gemini client, encriptación
+│   └── web/routers/       # API endpoints
+├── frontend/app/
+│   ├── main.py            # Analizador principal
+│   └── pages/             # Dashboard, login
+├── deploy/                # Scripts OrangePi + Cloudflare
+└── docker-compose.yml
 ```
 
 ---
 
-## 🛠️ Comandos
+## 🛠️ Stack
+
+| Capa | Tecnología |
+|------|------------|
+| Backend | FastAPI + Python 3.12 |
+| Frontend | Streamlit |
+| IA | Gemini 2.5 Flash |
+| DB | PostgreSQL + Redis |
+| Auth | JWT + Argon2 |
+| Encriptación | Fernet (AES-128) |
+| Deploy | Docker + Cloudflare Tunnel |
+
+---
+
+## 📋 Comandos
 
 ```bash
-make dev          # Desarrollo local
-make docker-up    # Docker completo
-make test         # Tests
-make lint         # Linting (Ruff)
-make format       # Formateo (Black)
+docker compose up -d      # Iniciar
+docker compose logs -f    # Ver logs
+docker compose down       # Detener
 ```
 
 ---
 
-## 📚 Documentación
+## 🚀 Deploy (OrangePi/Self-hosted)
 
-| Archivo | Contenido |
-|---------|-----------|
-| [CONFIG.md](../AGENTES.md/CONFIG.md) | Variables de entorno |
-| [ESTRUCTURA.md](../AGENTES.md/ESTRUCTURA.md) | Arquitectura hexagonal |
-| [MEJORAS_PROFESIONALES.md](../AGENTES.md/MEJORAS_PROFESIONALES.md) | Roadmap v1 → v2 |
+```bash
+sudo bash deploy/setup-orangepi.sh
+```
 
----
-
-## 🎯 Roadmap v1.0
-
-- [x] MVP funcional con Gemini
-- [x] Docker optimizado
-- [ ] Autenticación JWT
-- [ ] PostgreSQL activo
-- [ ] Rate limiting
-- [ ] Tests (60% cobertura)
-- [ ] CI/CD GitHub Actions
-
----
-
-## 🏗️ Stack
-
-- **Backend:** FastAPI + Python 3.12
-- **Frontend:** Streamlit
-- **IA:** Google Gemini 2.5 Flash
-- **DB:** PostgreSQL + Redis
-- **Tools:** UV, Docker, Ruff, Black
+Ver [deploy/DEPLOY_ORANGEPI.md](deploy/DEPLOY_ORANGEPI.md)
 
 ---
 
 ## 📝 Licencia
 
-MIT License
-
-**Made with ❤️ by Neural SaaS Platform**
+MIT · **Neural SaaS Platform**
