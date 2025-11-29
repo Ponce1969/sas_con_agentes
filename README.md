@@ -84,6 +84,20 @@ Ver [deploy/DEPLOY_ORANGEPI.md](deploy/DEPLOY_ORANGEPI.md)
 
 ---
 
+## 📋 Estado del Proyecto
+
+**90% listo para producción**
+
+| ✅ Implementado | 🚧 Pendiente |
+|----------------|--------------|
+| Análisis con Gemini 2.5 | Sistema de planes (free/pro) |
+| Auth JWT + Argon2 | Panel administrativo |
+| Dashboard + Gamificación | Rate limiting con Redis |
+| Encriptación API keys | Logs estructurados |
+| Deploy OrangePi/Cloudflare | CI/CD GitHub Actions |
+
+---
+
 ## 📝 Licencia
 
 MIT · **Neural SaaS Platform**
