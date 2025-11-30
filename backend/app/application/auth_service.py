@@ -1,12 +1,21 @@
 # backend/app/application/auth_service.py
+"""
+Servicio de autenticación y gestión de usuarios.
+
+Responsabilidades:
+- Hashing de passwords con Argon2id
+- Generación y validación de tokens JWT
+- Registro y autenticación de usuarios
+"""
 
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from enum import IntEnum
 from typing import Optional
 
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import InvalidHashError, VerifyMismatchError
 from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,16 +27,43 @@ from app.infrastructure.encryption import get_encryption_service
 
 logger = logging.getLogger(__name__)
 
+
+# ----------------- CONSTANTS -----------------
+
+
+class RoleID(IntEnum):
+    """IDs de roles del sistema (evita números mágicos)."""
+    FREE = 1
+    PRO = 2
+    CUSTOM = 3  # Usuario con su propia API key
+
+
+# Configuración de validación de password
+MIN_PASSWORD_LENGTH = 8
+
+# Regex pre-compilados para validaciones
+_EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+_UPPERCASE_PATTERN = re.compile(r"[A-Z]")
+_LOWERCASE_PATTERN = re.compile(r"[a-z]")
+_DIGIT_PATTERN = re.compile(r"\d")
+
+
+# ----------------- PASSWORD HASHER -----------------
+
+
 # Hasher Argon2 con configuración segura (OWASP recomendado)
-ph = PasswordHasher(
+_password_hasher = PasswordHasher(
     time_cost=3,        # Iteraciones
     memory_cost=65536,  # 64MB de memoria
     parallelism=4,      # Hilos paralelos
 )
 
 
+# ----------------- SERVICE -----------------
+
+
 class AuthService:
-    """Servicio de autenticación con JWT."""
+    """Servicio de autenticación con JWT y Argon2."""
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -37,29 +73,51 @@ class AuthService:
     @staticmethod
     def hash_password(password: str) -> str:
         """Hashear password con Argon2id (más seguro que bcrypt)."""
-        return ph.hash(password)
+        return _password_hasher.hash(password)
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verificar password contra hash Argon2."""
+        """
+        Verificar password contra hash Argon2.
+        
+        Returns:
+            True si el password es correcto, False en caso contrario.
+        """
         try:
-            ph.verify(hashed_password, plain_password)
+            _password_hasher.verify(hashed_password, plain_password)
             return True
         except VerifyMismatchError:
+            # Password incorrecto
             return False
-        except Exception:
+        except InvalidHashError:
+            # Hash corrupto o inválido
+            logger.warning("Hash de password inválido detectado")
             return False
 
     # ----------------- JWT -----------------
 
     @staticmethod
     def create_access_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
-        """Crear token JWT."""
-        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES))
+        """
+        Crear token JWT.
+        
+        Args:
+            user_id: ID del usuario
+            email: Email del usuario
+            expires_delta: Tiempo de expiración personalizado (opcional)
+            
+        Returns:
+            Token JWT codificado
+        """
+        # Usar datetime con timezone (mejor práctica que utcnow())
+        now = datetime.now(timezone.utc)
+        expire = now + (expires_delta or timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES))
+        
         to_encode = {
             "sub": str(user_id),
             "email": email,
             "exp": expire,
+            "iat": now,  # Issued at
             "type": "access",
         }
         return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
@@ -78,23 +136,30 @@ class AuthService:
 
     @staticmethod
     def validate_email(email: str) -> bool:
-        """Validar formato de email."""
-        pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-        return bool(re.match(pattern, email))
+        """Validar formato de email (usa regex pre-compilado)."""
+        return bool(_EMAIL_PATTERN.match(email))
 
     @staticmethod
     def validate_password(password: str) -> tuple[bool, str]:
         """
         Validar fortaleza de password.
-        Returns: (is_valid, error_message)
+        
+        Requisitos:
+        - Mínimo 8 caracteres
+        - Al menos una mayúscula
+        - Al menos una minúscula
+        - Al menos un número
+        
+        Returns:
+            Tupla (is_valid, error_message)
         """
-        if len(password) < 8:
-            return False, "La contraseña debe tener al menos 8 caracteres"
-        if not re.search(r"[A-Z]", password):
+        if len(password) < MIN_PASSWORD_LENGTH:
+            return False, f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres"
+        if not _UPPERCASE_PATTERN.search(password):
             return False, "La contraseña debe tener al menos una mayúscula"
-        if not re.search(r"[a-z]", password):
+        if not _LOWERCASE_PATTERN.search(password):
             return False, "La contraseña debe tener al menos una minúscula"
-        if not re.search(r"\d", password):
+        if not _DIGIT_PATTERN.search(password):
             return False, "La contraseña debe tener al menos un número"
         return True, ""
 
@@ -144,7 +209,7 @@ class AuthService:
             return None, "El email ya está registrado"
 
         # Determinar rol (custom si tiene API key propia)
-        role_id = 3 if gemini_api_key else 1  # 3=custom, 1=free
+        role_id = RoleID.CUSTOM if gemini_api_key else RoleID.FREE
 
         # Encriptar API key si se proporciona
         encrypted_api_key = None
@@ -167,7 +232,7 @@ class AuthService:
         await self.db.commit()
         await self.db.refresh(user)
 
-        logger.info(f"✅ Usuario registrado: {email}")
+        logger.info(f"✅ Usuario registrado: user_id={user.id}")
         return user, ""
 
     async def authenticate_user(self, email: str, password: str) -> tuple[Optional[User], str]:
@@ -186,7 +251,7 @@ class AuthService:
         if not user.is_active:
             return None, "Usuario desactivado"
 
-        logger.info(f"✅ Usuario autenticado: {email}")
+        logger.info(f"✅ Usuario autenticado: user_id={user.id}")
         return user, ""
 
     async def login(self, email: str, password: str) -> tuple[Optional[dict], str]:
@@ -210,6 +275,8 @@ class AuthService:
                 "full_name": user.full_name,
                 "role": user.role.name if user.role else "free",
                 "has_own_api_key": bool(user.gemini_api_key_encrypted),
+                "analyses_today": user.analyses_today or 0,
+                "total_analyses": user.total_analyses or 0,
             },
         }, ""
 

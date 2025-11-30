@@ -1,9 +1,18 @@
 # backend/app/web/routers/analysis_router.py
+"""
+Router para análisis de código Python con IA.
+
+Endpoints:
+- POST /api/analysis/ - Analizar código
+- GET /api/analysis/stats - Estadísticas del usuario
+- GET /api/analysis/history - Historial de análisis
+"""
 
 import logging
-from typing import Any, Optional
+from datetime import datetime
+from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +25,34 @@ from app.web.routers.auth_router import get_current_user
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/analysis", tags=["Análisis de Código"])
+
+
+# ----------------- HELPERS -----------------
+
+
+def _get_user_api_key(user: Optional[User]) -> Optional[str]:
+    """
+    Obtiene y desencripta la API key del usuario si existe.
+    
+    Args:
+        user: Usuario autenticado o None
+        
+    Returns:
+        API key desencriptada o None (usará key del sistema)
+    """
+    if not user or not user.gemini_api_key_encrypted:
+        return None
+    
+    try:
+        encryption = get_encryption_service()
+        api_key = encryption.decrypt(user.gemini_api_key_encrypted)
+        # Log sin PII - solo user_id, no email
+        logger.info(f"🔓 API key desencriptada para user_id: {user.id}")
+        return api_key
+    except Exception as e:
+        logger.error(f"Error al desencriptar API key para user_id {user.id}: {e}")
+        # Fallback a key del sistema (manejado por AnalysisService)
+        return None
 
 
 # ----------------- SCHEMAS -----------------
@@ -38,9 +75,44 @@ class AnalysisResponse(BaseModel):
     error: Optional[str] = None
     codigo: str
     usuario_id: Optional[int] = None
-    timestamp: str
+    timestamp: datetime  # Cambiado de str a datetime para mejor serialización
     modelo_usado: Optional[str] = None
-    analysis_id: Optional[int] = None  # ID del análisis guardado
+    analysis_id: Optional[int] = None
+
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class StatsResponse(BaseModel):
+    """Response de estadísticas del usuario."""
+
+    total_analisis: int
+    analisis_hoy: int
+    score_promedio: float
+    limite_diario: int
+    analisis_restantes: int
+
+
+class HistoryItem(BaseModel):
+    """Item del historial de análisis."""
+
+    id: int
+    codigo_snippet: str
+    score: Optional[int] = None
+    created_at: datetime
+    modelo_usado: Optional[str] = None
+
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class HistoryResponse(BaseModel):
+    """Response del historial de análisis."""
+
+    items: List[HistoryItem]
+    total: int
+    limit: int
+    offset: int
 
 
 # ----------------- ENDPOINTS -----------------
@@ -51,7 +123,7 @@ async def analizar_codigo(
     request: AnalysisRequest,
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user),
-) -> dict[str, Any]:
+) -> AnalysisResponse:
     """
     Analiza código Python y retorna sugerencias de mejora.
 
@@ -65,22 +137,11 @@ async def analizar_codigo(
     - Score de calidad (0-100)
     - Código mejorado
     """
-    # Crear servicio con DB para persistencia
     service = AnalysisService(db=db)
-
-    # Obtener user_id si está autenticado
     user_id = current_user.id if current_user else None
 
-    # Obtener y desencriptar API key del usuario si tiene una propia
-    user_api_key = None
-    if current_user and current_user.gemini_api_key_encrypted:
-        try:
-            encryption = get_encryption_service()
-            user_api_key = encryption.decrypt(current_user.gemini_api_key_encrypted)
-            logger.info(f"🔓 API key desencriptada para usuario: {current_user.email}")
-        except Exception as e:
-            logger.error(f"Error al desencriptar API key: {e}")
-            # Si falla la desencriptación, usar la key del sistema
+    # Obtener API key del usuario (desencriptar si existe)
+    user_api_key = _get_user_api_key(current_user)
 
     resultado = await service.analizar_codigo(
         codigo=request.codigo,
@@ -94,14 +155,14 @@ async def analizar_codigo(
             detail=resultado.get("error", "Error desconocido"),
         )
 
-    return resultado
+    return AnalysisResponse(**resultado)
 
 
-@router.get("/stats", status_code=status.HTTP_200_OK)
+@router.get("/stats", response_model=StatsResponse, status_code=status.HTTP_200_OK)
 async def obtener_estadisticas(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> dict[str, Any]:
+) -> StatsResponse:
     """
     Obtiene estadísticas de análisis del usuario autenticado.
 
@@ -111,40 +172,29 @@ async def obtener_estadisticas(
     - Score promedio
     - Límite diario según plan
     """
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Autenticación requerida para ver estadísticas",
-        )
-
+    # Nota: get_current_user ya garantiza autenticación (lanza 401 si falla)
     service = AnalysisService(db=db)
-    return await service.obtener_estadisticas(current_user.id)
+    stats = await service.obtener_estadisticas(current_user.id)
+    return StatsResponse(**stats)
 
 
-@router.get("/history", status_code=status.HTTP_200_OK)
+@router.get("/history", response_model=HistoryResponse, status_code=status.HTTP_200_OK)
 async def obtener_historial(
-    limit: int = 10,
-    offset: int = 0,
+    limit: int = Query(default=10, ge=1, le=50, description="Cantidad de resultados"),
+    offset: int = Query(default=0, ge=0, description="Desplazamiento para paginación"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> dict[str, Any]:
+) -> HistoryResponse:
     """
     Obtiene historial de análisis del usuario autenticado.
 
-    - **limit**: Cantidad de resultados (default: 10, max: 50)
+    - **limit**: Cantidad de resultados (1-50, default: 10)
     - **offset**: Desplazamiento para paginación
     """
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Autenticación requerida para ver historial",
-        )
-
-    # Limitar a máximo 50
-    limit = min(limit, 50)
-
+    # Nota: get_current_user ya garantiza autenticación (lanza 401 si falla)
     service = AnalysisService(db=db)
-    return await service.obtener_historial(current_user.id, limit, offset)
+    history = await service.obtener_historial(current_user.id, limit, offset)
+    return HistoryResponse(**history)
 
 
 @router.get("/health", status_code=status.HTTP_200_OK)

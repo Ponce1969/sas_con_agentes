@@ -1,9 +1,37 @@
 # backend/app/web/schemas/auth_schemas.py
+"""
+Schemas de autenticación para validación de requests y responses.
 
-from typing import Optional
+Centraliza la validación de email con tipo personalizado para evitar duplicación.
+"""
 
-from pydantic import BaseModel, Field, field_validator
 import re
+from typing import Annotated, Any, Optional
+
+from pydantic import AfterValidator, BaseModel, Field
+
+
+# ----------------- CUSTOM TYPES -----------------
+
+
+# Patrón de email pre-compilado (más eficiente que compilar en cada validación)
+_EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+
+
+def _validate_and_normalize_email(value: str) -> str:
+    """
+    Valida formato de email y normaliza a minúsculas.
+    
+    Raises:
+        ValueError: Si el email no tiene formato válido
+    """
+    if not _EMAIL_PATTERN.match(value):
+        raise ValueError("Email inválido")
+    return value.lower()
+
+
+# Tipo personalizado: email validado y normalizado
+EmailLowerStr = Annotated[str, AfterValidator(_validate_and_normalize_email)]
 
 
 # ----------------- REQUEST SCHEMAS -----------------
@@ -12,21 +40,13 @@ import re
 class UserRegisterRequest(BaseModel):
     """Schema para registro de usuario."""
 
-    email: str = Field(..., max_length=120)
+    email: EmailLowerStr = Field(..., max_length=120)
     password: str = Field(..., min_length=8, max_length=128)
     full_name: Optional[str] = Field(None, max_length=100)
     gemini_api_key: Optional[str] = Field(None, description="API Key propia de Gemini (opcional)")
 
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, v: str) -> str:
-        pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-        if not re.match(pattern, v):
-            raise ValueError("Email inválido")
-        return v.lower()
-
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "email": "usuario@ejemplo.com",
                 "password": "MiPassword123",
@@ -34,29 +54,23 @@ class UserRegisterRequest(BaseModel):
                 "gemini_api_key": None,
             }
         }
+    }
 
 
 class UserLoginRequest(BaseModel):
     """Schema para login de usuario."""
 
-    email: str
+    email: EmailLowerStr
     password: str
 
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, v: str) -> str:
-        pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-        if not re.match(pattern, v):
-            raise ValueError("Email inválido")
-        return v.lower()
-
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "email": "usuario@ejemplo.com",
                 "password": "MiPassword123",
             }
         }
+    }
 
 
 # ----------------- RESPONSE SCHEMAS -----------------
@@ -73,8 +87,7 @@ class UserResponse(BaseModel):
     analyses_today: int
     total_analyses: int
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class TokenResponse(BaseModel):
@@ -90,4 +103,4 @@ class MessageResponse(BaseModel):
 
     success: bool
     message: str
-    data: Optional[dict] = None
+    data: Optional[dict[str, Any]] = None
